@@ -19,7 +19,15 @@ let dbInstance = null;
 async function initializeDatabase() {
   console.log('📦 正在初始化 SQL.js...');
   
-  const SQL = await initSqlJs();
+  // 在 Node.js 21+ 中，sql.js 可能会因为 URL 解析绝对路径失败而报错
+  // 手动指定 locateFile 并确保它返回正确的路径，或者对于 Node 环境，
+  // 某些情况下需要将路径转换为 file:// 协议，或者干脆手动加载 WASM 二进制文件
+  const wasmPath = path.join(__dirname, '../node_modules/sql.js/dist/sql-wasm.wasm');
+  
+  const SQL = await initSqlJs({
+    // 使用 wasmBinary 直接加载以避免 fetch 时的 URL 解析错误
+    wasmBinary: fs.readFileSync(wasmPath)
+  });
   
   // 尝试加载现有数据库
   if (fs.existsSync(dbPath)) {
@@ -149,10 +157,92 @@ function closeDatabase() {
   console.log('🔒 数据库连接已关闭');
 }
 
+/**
+ * 将 sql.js 的执行结果转换为对象数组
+ */
+function formatResult(result) {
+  if (!result || !result[0]) return [];
+  const { columns, values } = result[0];
+  return values.map(row => {
+    const obj = {};
+    columns.forEach((col, idx) => {
+      obj[col] = row[idx];
+    });
+    return obj;
+  });
+}
+
+/**
+ * 运行 SQL 语句并绑定参数 (用于 INSERT/UPDATE/DELETE)
+ */
+function run(sql, params = []) {
+  if (!dbInstance) throw new Error('数据库未初始化');
+  
+  const stmt = dbInstance.prepare(sql);
+  stmt.bind(params);
+  stmt.step();
+  stmt.free();
+  
+  // 对于插入操作，返回最后插入的 ID
+  if (sql.trim().toUpperCase().startsWith('INSERT')) {
+    const res = dbInstance.exec('SELECT last_insert_rowid()');
+    return { lastInsertRowid: res[0].values[0][0] };
+  }
+  return { changes: dbInstance.getRowsModified() };
+}
+
+/**
+ * 执行查询并返回所有结果 (用于 SELECT)
+ */
+function all(sql, params = []) {
+  if (!dbInstance) throw new Error('数据库未初始化');
+  
+  const stmt = dbInstance.prepare(sql);
+  stmt.bind(params);
+  
+  const results = [];
+  while (stmt.step()) {
+    results.push(stmt.getAsObject());
+  }
+  stmt.free();
+  return results;
+}
+
+/**
+ * 执行查询并返回第一个结果 (用于 SELECT)
+ */
+function get(sql, params = []) {
+  if (!dbInstance) throw new Error('数据库未初始化');
+  
+  const stmt = dbInstance.prepare(sql);
+  stmt.bind(params);
+  
+  let result = null;
+  if (stmt.step()) {
+    result = stmt.getAsObject();
+  }
+  stmt.free();
+  return result;
+}
+
 module.exports = {
   getDB,
   initializeDatabase,
   initializeDatabaseSchema,
   registerViews,
   closeDatabase,
+  formatResult,
+  run,
+  all,
+  get,
+  db: {
+    run,
+    all,
+    get,
+    prepare: (sql) => ({
+      all: (...params) => all(sql, params),
+      get: (...params) => get(sql, params),
+      run: (...params) => run(sql, params)
+    })
+  }
 };

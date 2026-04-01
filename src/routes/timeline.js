@@ -51,7 +51,7 @@ router.get('/', (req, res) => {
     sql += ` LIMIT ? OFFSET ?`;
     params.push(parseInt(limit), offset);
     
-    const timelines = db.prepare(sql).all(...params);
+    const timelines = db.all(sql, params);
     
     // 总数统计
     let countSql = 'SELECT COUNT(*) as total FROM renovation_timeline WHERE 1=1';
@@ -62,7 +62,8 @@ router.get('/', (req, res) => {
     if (date_to) { countSql += ' AND planned_end <= ?'; countParams.push(date_to); }
     if (search) { countSql += ' AND title LIKE ?'; countParams.push(`%${search}%`); }
     
-    const { total } = db.prepare(countSql).get(...countParams);
+    const countResult = db.get(countSql, countParams);
+    const total = countResult ? countResult.total : 0;
     
     res.json({ success: true, data: timelines, pagination: { page: parseInt(page), limit: parseInt(limit), total } });
   } catch (err) {
@@ -76,7 +77,7 @@ router.get('/', (req, res) => {
 router.get('/stats', (req, res) => {
   try {
     // 按阶段统计
-    const byPhase = db.prepare(`
+    const byPhase = db.all(`
       SELECT 
         phase,
         COUNT(*) as total_tasks,
@@ -87,33 +88,33 @@ router.get('/stats', (req, res) => {
       FROM renovation_timeline
       GROUP BY phase
       ORDER BY MIN(planned_start)
-    `).all();
+    `);
     
     // 总体完成率
-    const overallStats = db.prepare(`
+    const overallStats = db.get(`
       SELECT 
         COUNT(*) as total_tasks,
         SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed_tasks,
         SUM(CASE WHEN status = 'in_progress' THEN 1 ELSE 0 END) as in_progress_tasks,
         ROUND(100.0 * SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) / COUNT(*), 2) as completion_rate
       FROM renovation_timeline
-    `).get();
+    `);
     
     // 延期任务数量
-    const delayedTasks = db.prepare(`
+    const delayedTasks = db.get(`
       SELECT COUNT(*) as count 
       FROM renovation_timeline 
       WHERE status = 'delayed' OR (actual_end > planned_end AND actual_end IS NOT NULL)
-    `).get();
+    `);
     
     // 待验收任务
-    const pendingInspections = db.prepare(`
+    const pendingInspections = db.get(`
       SELECT COUNT(*) as count 
       FROM renovation_timeline 
       WHERE status = 'in_progress' AND quality_check_passed = 0
-    `).get();
+    `);
     
-    res.json({ success: true, data: { by_phase: byPhase, overall: overallStats, delayed_count: delayedTasks.count, pending_inspections: pendingInspections.count } });
+    res.json({ success: true, data: { by_phase: byPhase, overall: overallStats, delayed_count: (delayedTasks ? delayedTasks.count : 0), pending_inspections: (pendingInspections ? pendingInspections.count : 0) } });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
@@ -124,14 +125,14 @@ router.get('/stats', (req, res) => {
  */
 router.get('/:id', (req, res) => {
   try {
-    const timeline = db.prepare(`
+    const timeline = db.get(`
       SELECT 
         t.*,
         v.name as vendor_name
       FROM renovation_timeline t
       LEFT JOIN vendors v ON t.vendor_id = v.id
       WHERE t.id = ?
-    `).get(req.params.id);
+    `, [req.params.id]);
     
     if (!timeline) {
       return res.status(404).json({ success: false, error: '进度记录不存在' });
@@ -155,24 +156,24 @@ router.post('/', (req, res) => {
     }
     
     // 验证外键
-    if (vendor_id && !db.prepare('SELECT id FROM vendors WHERE id = ?').get(vendor_id)) {
+    if (vendor_id && !db.get('SELECT id FROM vendors WHERE id = ?', [vendor_id])) {
       return res.status(400).json({ success: false, error: '供应商不存在' });
     }
     
-    const result = db.prepare(`
+    const result = db.run(`
       INSERT INTO renovation_timeline 
       (title, phase, milestone_type, planned_start, planned_end, actual_start, actual_end, status, progress_percent, responsible_party, vendor_id, related_order_ids, quality_check_passed, inspection_notes, photo_url, progress_notes, tags, notes)
       VALUES (?, ?, ?, ?, ?, NULL, NULL, 'not_started', 0, ?, ?, ?, 0, '', ?, ?, ?, ?)
-    `).run(title, phase, milestone_type || 'routine_task', planned_start, planned_end, responsible_party || null, vendor_id || null, related_order_ids || null, photo_url || null, progress_notes || null, tags || null, notes || null);
+    `, [title, phase, milestone_type || 'routine_task', planned_start, planned_end, responsible_party || null, vendor_id || null, related_order_ids || null, photo_url || null, progress_notes || null, tags || null, notes || null]);
     
-    const newTimeline = db.prepare(`
+    const newTimeline = db.get(`
       SELECT 
         t.*,
         v.name as vendor_name
       FROM renovation_timeline t
       LEFT JOIN vendors v ON t.vendor_id = v.id
       WHERE t.id = ?
-    `).get(result.lastInsertRowid);
+    `, [result.lastInsertRowid]);
     
     res.status(201).json({ success: true, data: newTimeline, message: '进度记录创建成功' });
   } catch (err) {
@@ -188,7 +189,7 @@ router.put('/:id', (req, res) => {
     const { id } = req.params;
     const { title, phase, planned_start, planned_end, actual_start, actual_end, status, progress_percent, responsible_party, quality_check_passed, inspection_notes, photo_url, progress_notes } = req.body;
     
-    const existing = db.prepare('SELECT * FROM renovation_timeline WHERE id = ?').get(id);
+    const existing = db.get('SELECT * FROM renovation_timeline WHERE id = ?', [id]);
     if (!existing) {
       return res.status(404).json({ success: false, error: '进度记录不存在' });
     }
@@ -201,7 +202,7 @@ router.put('/:id', (req, res) => {
       else finalStatus = 'not_started';
     }
     
-    db.prepare(`
+    db.run(`
       UPDATE renovation_timeline 
       SET title = COALESCE(?, title),
           phase = COALESCE(?, phase),
@@ -218,16 +219,16 @@ router.put('/:id', (req, res) => {
           progress_notes = COALESCE(?, progress_notes),
           updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
-    `).run(title, phase, planned_start, planned_end, actual_start, actual_end, finalStatus, progress_percent, responsible_party, quality_check_passed, inspection_notes, photo_url, progress_notes, id);
+    `, [title, phase, planned_start, planned_end, actual_start, actual_end, finalStatus, progress_percent, responsible_party, quality_check_passed, inspection_notes, photo_url, progress_notes, id]);
     
-    const updated = db.prepare(`
+    const updated = db.get(`
       SELECT 
         t.*,
         v.name as vendor_name
       FROM renovation_timeline t
       LEFT JOIN vendors v ON t.vendor_id = v.id
       WHERE t.id = ?
-    `).get(id);
+    `, [id]);
     
     res.json({ success: true, data: updated, message: '进度记录更新成功' });
   } catch (err) {
@@ -242,7 +243,7 @@ router.delete('/:id', (req, res) => {
   try {
     const { id } = req.params;
     
-    db.prepare('DELETE FROM renovation_timeline WHERE id = ?').run(id);
+    db.run('DELETE FROM renovation_timeline WHERE id = ?', [id]);
     res.json({ success: true, message: '进度记录删除成功' });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });

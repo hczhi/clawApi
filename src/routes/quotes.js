@@ -49,7 +49,7 @@ router.get('/', (req, res) => {
     sql += ` LIMIT ? OFFSET ?`;
     params.push(parseInt(limit), offset);
     
-    const quotes = db.prepare(sql).all(...params);
+    const quotes = db.all(sql, params);
     
     // 总数统计
     let countSql = `SELECT COUNT(*) as total FROM quotes WHERE 1=1`;
@@ -60,7 +60,8 @@ router.get('/', (req, res) => {
     if (priority) { countSql += ' AND priority = ?'; countParams.push(priority); }
     if (search) { countSql += ' AND (project_name LIKE ? OR description LIKE ?)'; countParams.push(`%${search}%`, `%${search}%`); }
     
-    const { total } = db.prepare(countSql).get(...countParams);
+    const countResult = db.get(countSql, countParams);
+    const total = countResult ? countResult.total : 0;
     
     res.json({ success: true, data: quotes, pagination: { page: parseInt(page), limit: parseInt(limit), total } });
   } catch (err) {
@@ -73,7 +74,7 @@ router.get('/', (req, res) => {
  */
 router.get('/:id', (req, res) => {
   try {
-    const quote = db.prepare(`
+    const quote = db.get(`
       SELECT 
         q.*,
         v.name as vendor_name,
@@ -82,7 +83,7 @@ router.get('/:id', (req, res) => {
       LEFT JOIN vendors v ON q.vendor_id = v.id
       LEFT JOIN expense_categories ec ON q.category_id = ec.id
       WHERE q.id = ?
-    `).get(req.params.id);
+    `, [req.params.id]);
     
     if (!quote) {
       return res.status(404).json({ success: false, error: '报价不存在' });
@@ -106,19 +107,19 @@ router.post('/', (req, res) => {
     }
     
     // 验证外键存在
-    const vendor = db.prepare('SELECT id FROM vendors WHERE id = ?').get(vendor_id);
-    const category = db.prepare('SELECT id FROM expense_categories WHERE id = ?').get(category_id);
+    const vendor = db.get('SELECT id FROM vendors WHERE id = ?', [vendor_id]);
+    const category = db.get('SELECT id FROM expense_categories WHERE id = ?', [category_id]);
     
     if (!vendor || !category) {
       return res.status(400).json({ success: false, error: '商家或分类不存在' });
     }
     
-    const result = db.prepare(`
+    const result = db.run(`
       INSERT INTO quotes (vendor_id, category_id, design_concept_id, project_name, description, amount, currency, validity_start, validity_end, notes)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(vendor_id, category_id, design_concept_id || null, project_name, description || null, amount, currency || 'CNY', validity_start || null, validity_end || null, notes || null);
+    `, [vendor_id, category_id, design_concept_id || null, project_name, description || null, amount, currency || 'CNY', validity_start || null, validity_end || null, notes || null]);
     
-    const newQuote = db.prepare(`
+    const newQuote = db.get(`
       SELECT 
         q.*,
         v.name as vendor_name,
@@ -127,7 +128,7 @@ router.post('/', (req, res) => {
       LEFT JOIN vendors v ON q.vendor_id = v.id
       LEFT JOIN expense_categories ec ON q.category_id = ec.id
       WHERE q.id = ?
-    `).get(result.lastInsertRowid);
+    `, [result.lastInsertRowid]);
     
     res.status(201).json({ success: true, data: newQuote, message: '报价创建成功' });
   } catch (err) {
@@ -143,12 +144,12 @@ router.put('/:id', (req, res) => {
     const { id } = req.params;
     const { project_name, description, amount, status, priority, validity_end, notes } = req.body;
     
-    const existing = db.prepare('SELECT * FROM quotes WHERE id = ?').get(id);
+    const existing = db.get('SELECT * FROM quotes WHERE id = ?', [id]);
     if (!existing) {
       return res.status(404).json({ success: false, error: '报价不存在' });
     }
     
-    db.prepare(`
+    db.run(`
       UPDATE quotes 
       SET project_name = COALESCE(?, project_name),
           description = COALESCE(?, description),
@@ -159,9 +160,9 @@ router.put('/:id', (req, res) => {
           notes = COALESCE(?, notes),
           updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
-    `).run(project_name, description, amount, status, priority, validity_end, notes, id);
+    `, [project_name, description, amount, status, priority, validity_end, notes, id]);
     
-    const updated = db.prepare(`
+    const updated = db.get(`
       SELECT 
         q.*,
         v.name as vendor_name,
@@ -170,7 +171,7 @@ router.put('/:id', (req, res) => {
       LEFT JOIN vendors v ON q.vendor_id = v.id
       LEFT JOIN expense_categories ec ON q.category_id = ec.id
       WHERE q.id = ?
-    `).get(id);
+    `, [id]);
     
     res.json({ success: true, data: updated, message: '报价更新成功' });
   } catch (err) {
@@ -185,7 +186,7 @@ router.delete('/:id', (req, res) => {
   try {
     const { id } = req.params;
     
-    db.prepare('DELETE FROM quotes WHERE id = ?').run(id);
+    db.run('DELETE FROM quotes WHERE id = ?', [id]);
     res.json({ success: true, message: '报价删除成功' });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });

@@ -61,7 +61,7 @@ router.get('/', (req, res) => {
     sql += ` LIMIT ? OFFSET ?`;
     params.push(parseInt(limit), offset);
     
-    const expenses = db.prepare(sql).all(...params);
+    const expenses = db.all(sql, params);
     
     // 总数统计
     let countSql = `SELECT COUNT(*) as total FROM expenses WHERE 1=1`;
@@ -73,7 +73,8 @@ router.get('/', (req, res) => {
     if (date_to) { countSql += ' AND payment_date <= ?'; countParams.push(date_to); }
     if (search) { countSql += ' AND (title LIKE ? OR notes LIKE ?)'; countParams.push(`%${search}%`, `%${search}%`); }
     
-    const { total } = db.prepare(countSql).get(...countParams);
+    const countResult = db.get(countSql, countParams);
+    const total = countResult ? countResult.total : 0;
     
     res.json({ success: true, data: expenses, pagination: { page: parseInt(page), limit: parseInt(limit), total } });
   } catch (err) {
@@ -86,7 +87,7 @@ router.get('/', (req, res) => {
  */
 router.get('/:id', (req, res) => {
   try {
-    const expense = db.prepare(`
+    const expense = db.get(`
       SELECT 
         e.*,
         ec.name as category_name,
@@ -97,7 +98,7 @@ router.get('/:id', (req, res) => {
       LEFT JOIN vendors v ON e.vendor_id = v.id
       LEFT JOIN quotes q ON e.quote_id = q.id
       WHERE e.id = ?
-    `).get(req.params.id);
+    `, [req.params.id]);
     
     if (!expense) {
       return res.status(404).json({ success: false, error: '费用记录不存在' });
@@ -121,20 +122,22 @@ router.post('/', (req, res) => {
     }
     
     // 验证外键存在
-    const category = db.prepare('SELECT id FROM expense_categories WHERE id = ?').get(category_id);
-    if (quote_id && !db.prepare('SELECT id FROM quotes WHERE id = ?').get(quote_id)) {
+    if (category_id && !db.get('SELECT id FROM expense_categories WHERE id = ?', [category_id])) {
+      return res.status(400).json({ success: false, error: '分类不存在' });
+    }
+    if (quote_id && !db.get('SELECT id FROM quotes WHERE id = ?', [quote_id])) {
       return res.status(400).json({ success: false, error: '报价单不存在' });
     }
-    if (vendor_id && !db.prepare('SELECT id FROM vendors WHERE id = ?').get(vendor_id)) {
+    if (vendor_id && !db.get('SELECT id FROM vendors WHERE id = ?', [vendor_id])) {
       return res.status(400).json({ success: false, error: '供应商不存在' });
     }
     
-    const result = db.prepare(`
+    const result = db.run(`
       INSERT INTO expenses (category_id, quote_id, title, amount, payment_method, payer_names, payment_date, receipt_file_path, vendor_id, reimbursement_status, tags, notes)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(category_id, quote_id || null, title, amount, payment_method || 'cash', payer_names || null, payment_date, receipt_file_path || null, vendor_id || null, reimbursement_status || 'not_required', tags || null, notes || null);
+    `, [category_id, quote_id || null, title, amount, payment_method || 'cash', payer_names || null, payment_date, receipt_file_path || null, vendor_id || null, reimbursement_status || 'not_required', tags || null, notes || null]);
     
-    const newExpense = db.prepare(`
+    const newExpense = db.get(`
       SELECT 
         e.*,
         ec.name as category_name,
@@ -143,7 +146,7 @@ router.post('/', (req, res) => {
       LEFT JOIN expense_categories ec ON e.category_id = ec.id
       LEFT JOIN vendors v ON e.vendor_id = v.id
       WHERE e.id = ?
-    `).get(result.lastInsertRowid);
+    `, [result.lastInsertRowid]);
     
     res.status(201).json({ success: true, data: newExpense, message: '费用记录创建成功' });
   } catch (err) {
@@ -159,12 +162,12 @@ router.put('/:id', (req, res) => {
     const { id } = req.params;
     const { title, amount, payment_method, payment_date, status, notes } = req.body;
     
-    const existing = db.prepare('SELECT * FROM expenses WHERE id = ?').get(id);
+    const existing = db.get('SELECT * FROM expenses WHERE id = ?', [id]);
     if (!existing) {
       return res.status(404).json({ success: false, error: '费用记录不存在' });
     }
     
-    db.prepare(`
+    db.run(`
       UPDATE expenses 
       SET title = COALESCE(?, title),
           amount = COALESCE(?, amount),
@@ -174,9 +177,9 @@ router.put('/:id', (req, res) => {
           notes = COALESCE(?, notes),
           updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
-    `).run(title, amount, payment_method, payment_date, status, notes, id);
+    `, [title, amount, payment_method, payment_date, status, notes, id]);
     
-    const updated = db.prepare(`
+    const updated = db.get(`
       SELECT 
         e.*,
         ec.name as category_name,
@@ -185,7 +188,7 @@ router.put('/:id', (req, res) => {
       LEFT JOIN expense_categories ec ON e.category_id = ec.id
       LEFT JOIN vendors v ON e.vendor_id = v.id
       WHERE e.id = ?
-    `).get(id);
+    `, [id]);
     
     res.json({ success: true, data: updated, message: '费用记录更新成功' });
   } catch (err) {
@@ -200,7 +203,7 @@ router.delete('/:id', (req, res) => {
   try {
     const { id } = req.params;
     
-    db.prepare('DELETE FROM expenses WHERE id = ?').run(id);
+    db.run('DELETE FROM expenses WHERE id = ?', [id]);
     res.json({ success: true, message: '费用记录删除成功' });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
@@ -234,10 +237,10 @@ router.get('/stats/overview', (req, res) => {
       params.push(to);
     }
     
-    const stats = db.prepare(sql).get(...params);
+    const stats = db.get(sql, params);
     
     // 按分类统计
-    const byCategory = db.prepare(`
+    const byCategory = db.all(`
       SELECT 
         ec.name as category,
         COUNT(e.id) as count,
@@ -247,20 +250,9 @@ router.get('/stats/overview', (req, res) => {
       WHERE e.status = 'paid'
       GROUP BY ec.id
       ORDER BY amount DESC
-    `).all();
-    
-    // 支付方式统计
-    const byPaymentMethod = db.prepare(`
-      SELECT 
-        payment_method,
-        COUNT(*) as count,
-        SUM(amount) as amount
-      FROM expenses 
-      WHERE status = 'paid'
-      GROUP BY payment_method
-    `).all();
-    
-    res.json({ success: true, data: { overview: stats, by_category: byCategory, by_payment_method: byPaymentMethod } });
+    `);
+
+    res.json({ success: true, data: { stats, byCategory } });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }

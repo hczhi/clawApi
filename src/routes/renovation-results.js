@@ -28,7 +28,7 @@ router.get('/', (req, res) => {
     sql += ` LIMIT ? OFFSET ?`;
     params.push(parseInt(limit), offset);
     
-    const results = db.prepare(sql).all(...params);
+    const results = db.all(sql, params);
     
     // 总数统计
     let countSql = 'SELECT COUNT(*) as total FROM renovation_results WHERE 1=1';
@@ -36,7 +36,8 @@ router.get('/', (req, res) => {
     if (space_name) { countSql += ' AND space_name = ?'; countParams.push(space_name); }
     if (search) { countSql += ' AND title LIKE ?'; countParams.push(`%${search}%`); }
     
-    const { total } = db.prepare(countSql).get(...countParams);
+    const countResult = db.get(countSql, countParams);
+    const total = countResult ? countResult.total : 0;
     
     res.json({ success: true, data: results, pagination: { page: parseInt(page), limit: parseInt(limit), total } });
   } catch (err) {
@@ -49,7 +50,7 @@ router.get('/', (req, res) => {
  */
 router.get('/:id', (req, res) => {
   try {
-    const result = db.prepare(`
+    const result = db.get(`
       SELECT 
         r.*,
         t.title as task_title,
@@ -57,7 +58,7 @@ router.get('/:id', (req, res) => {
       FROM renovation_results r
       LEFT JOIN renovation_timeline t ON r.task_id = t.id
       WHERE r.id = ?
-    `).get(req.params.id);
+    `, [req.params.id]);
     
     if (!result) {
       return res.status(404).json({ success: false, error: '装修结果不存在' });
@@ -81,17 +82,17 @@ router.post('/', (req, res) => {
     }
     
     // 验证外键
-    if (task_id && !db.prepare('SELECT id FROM renovation_timeline WHERE id = ?').get(task_id)) {
+    if (task_id && !db.get('SELECT id FROM renovation_timeline WHERE id = ?', [task_id])) {
       return res.status(400).json({ success: false, error: '关联的任务不存在' });
     }
     
-    const result = db.prepare(`
+    const result = db.run(`
       INSERT INTO renovation_results 
       (title, space_name, task_id, photo_before_url, photo_after_url, video_url, overall_rating, quality_rating, material_rating, aesthetics_rating, experience_notes, lessons_learned, tags, notes)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(title, space_name, task_id || null, photo_before_url || null, photo_after_url || null, video_url || null, overall_rating || null, quality_rating || null, material_rating || null, aesthetics_rating || null, experience_notes || null, lessons_learned || null, tags || null, notes || null);
+    `, [title, space_name, task_id || null, photo_before_url || null, photo_after_url || null, video_url || null, overall_rating || null, quality_rating || null, material_rating || null, aesthetics_rating || null, experience_notes || null, lessons_learned || null, tags || null, notes || null]);
     
-    const newResult = db.prepare(`
+    const newResult = db.get(`
       SELECT 
         r.*,
         t.title as task_title,
@@ -99,7 +100,7 @@ router.post('/', (req, res) => {
       FROM renovation_results r
       LEFT JOIN renovation_timeline t ON r.task_id = t.id
       WHERE r.id = ?
-    `).get(result.lastInsertRowid);
+    `, [result.lastInsertRowid]);
     
     res.status(201).json({ success: true, data: newResult, message: '装修结果记录成功' });
   } catch (err) {
@@ -115,12 +116,12 @@ router.put('/:id', (req, res) => {
     const { id } = req.params;
     const { title, space_name, photo_before_url, photo_after_url, video_url, overall_rating, quality_rating, material_rating, aesthetics_rating, experience_notes, lessons_learned, tags, notes } = req.body;
     
-    const existing = db.prepare('SELECT * FROM renovation_results WHERE id = ?').get(id);
+    const existing = db.get('SELECT * FROM renovation_results WHERE id = ?', [id]);
     if (!existing) {
       return res.status(404).json({ success: false, error: '装修结果不存在' });
     }
     
-    db.prepare(`
+    db.run(`
       UPDATE renovation_results 
       SET title = COALESCE(?, title),
           space_name = COALESCE(?, space_name),
@@ -137,9 +138,9 @@ router.put('/:id', (req, res) => {
           notes = COALESCE(?, notes),
           updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
-    `).run(title, space_name, photo_before_url, photo_after_url, video_url, overall_rating, quality_rating, material_rating, aesthetics_rating, experience_notes, lessons_learned, tags, notes, id);
+    `, [title, space_name, photo_before_url, photo_after_url, video_url, overall_rating, quality_rating, material_rating, aesthetics_rating, experience_notes, lessons_learned, tags, notes, id]);
     
-    const updated = db.prepare(`
+    const updated = db.get(`
       SELECT 
         r.*,
         t.title as task_title,
@@ -147,7 +148,7 @@ router.put('/:id', (req, res) => {
       FROM renovation_results r
       LEFT JOIN renovation_timeline t ON r.task_id = t.id
       WHERE r.id = ?
-    `).get(id);
+    `, [id]);
     
     res.json({ success: true, data: updated, message: '装修结果更新成功' });
   } catch (err) {
@@ -162,7 +163,7 @@ router.delete('/:id', (req, res) => {
   try {
     const { id } = req.params;
     
-    db.prepare('DELETE FROM renovation_results WHERE id = ?').run(id);
+    db.run('DELETE FROM renovation_results WHERE id = ?', [id]);
     res.json({ success: true, message: '装修结果删除成功' });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });

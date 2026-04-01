@@ -59,7 +59,7 @@ router.get('/', (req, res) => {
     sql += ` LIMIT ? OFFSET ?`;
     params.push(parseInt(limit), offset);
     
-    const plans = db.prepare(sql).all(...params);
+    const plans = db.all(sql, params);
     
     // 总数统计
     let countSql = 'SELECT COUNT(*) as total FROM purchase_plans WHERE 1=1';
@@ -69,7 +69,8 @@ router.get('/', (req, res) => {
     if (status) { countSql += ' AND status = ?'; countParams.push(status); }
     if (search) { countSql += ' AND item_name LIKE ?'; countParams.push(`%${search}%`); }
     
-    const { total } = db.prepare(countSql).get(...countParams);
+    const countResult = db.get(countSql, countParams);
+    const total = countResult ? countResult.total : 0;
     
     res.json({ success: true, data: plans, pagination: { page: parseInt(page), limit: parseInt(limit), total } });
   } catch (err) {
@@ -82,7 +83,7 @@ router.get('/', (req, res) => {
  */
 router.get('/:id', (req, res) => {
   try {
-    const plan = db.prepare(`
+    const plan = db.get(`
       SELECT 
         p.*,
         ec.name as category_name,
@@ -91,14 +92,14 @@ router.get('/:id', (req, res) => {
       LEFT JOIN expense_categories ec ON p.category_id = ec.id
       LEFT JOIN vendors v ON p.vendor_id = v.id
       WHERE p.id = ?
-    `).get(req.params.id);
+    `, [req.params.id]);
     
     if (!plan) {
       return res.status(404).json({ success: false, error: '购买计划不存在' });
     }
     
     // 计算预算对比
-    plan.budget_diff = plan.actual_price - plan.estimated_budget;
+    plan.budget_diff = (plan.actual_price || 0) - plan.estimated_budget;
     plan.budget_ratio = plan.estimated_budget ? ((plan.actual_price / plan.estimated_budget) * 100).toFixed(2) : null;
     
     res.json({ success: true, data: plan });
@@ -118,13 +119,13 @@ router.post('/', (req, res) => {
       return res.status(400).json({ success: false, error: '物品名称和分类 ID 不能为空' });
     }
     
-    const result = db.prepare(`
+    const result = db.run(`
       INSERT INTO purchase_plans 
       (item_name, category_id, estimated_budget, actual_price, estimated_purchase_date, purchased_date, installation_required, scheduled_installation_date, vendor_id, tags, notes)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(item_name, category_id, estimated_budget || null, actual_price || null, estimated_purchase_date || null, purchased_date || null, installation_required || 0, scheduled_installation_date || null, vendor_id || null, tags || null, notes || null);
+    `, [item_name, category_id, estimated_budget || null, actual_price || null, estimated_purchase_date || null, purchased_date || null, installation_required || 0, scheduled_installation_date || null, vendor_id || null, tags || null, notes || null]);
     
-    const newPlan = db.prepare(`
+    const newPlan = db.get(`
       SELECT 
         p.*,
         ec.name as category_name,
@@ -133,7 +134,7 @@ router.post('/', (req, res) => {
       LEFT JOIN expense_categories ec ON p.category_id = ec.id
       LEFT JOIN vendors v ON p.vendor_id = v.id
       WHERE p.id = ?
-    `).get(result.lastInsertRowid);
+    `, [result.lastInsertRowid]);
     
     res.status(201).json({ success: true, data: newPlan, message: '购买计划创建成功' });
   } catch (err) {
@@ -149,12 +150,12 @@ router.put('/:id', (req, res) => {
     const { id } = req.params;
     const { item_name, estimated_budget, actual_price, estimated_purchase_date, purchased_date, installation_required, scheduled_installation_date, vendor_id, tags, notes } = req.body;
     
-    const existing = db.prepare('SELECT * FROM purchase_plans WHERE id = ?').get(id);
+    const existing = db.get('SELECT * FROM purchase_plans WHERE id = ?', [id]);
     if (!existing) {
       return res.status(404).json({ success: false, error: '购买计划不存在' });
     }
     
-    db.prepare(`
+    db.run(`
       UPDATE purchase_plans 
       SET item_name = COALESCE(?, item_name),
           estimated_budget = COALESCE(?, estimated_budget),
@@ -168,9 +169,9 @@ router.put('/:id', (req, res) => {
           notes = COALESCE(?, notes),
           updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
-    `).run(item_name, estimated_budget, actual_price, estimated_purchase_date, purchased_date, installation_required, scheduled_installation_date, vendor_id, tags, notes, id);
+    `, [item_name, estimated_budget, actual_price, estimated_purchase_date, purchased_date, installation_required, scheduled_installation_date, vendor_id, tags, notes, id]);
     
-    const updated = db.prepare(`
+    const updated = db.get(`
       SELECT 
         p.*,
         ec.name as category_name,
@@ -179,10 +180,10 @@ router.put('/:id', (req, res) => {
       LEFT JOIN expense_categories ec ON p.category_id = ec.id
       LEFT JOIN vendors v ON p.vendor_id = v.id
       WHERE p.id = ?
-    `).get(id);
+    `, [id]);
     
     // 计算预算对比
-    updated.budget_diff = updated.actual_price - updated.estimated_budget;
+    updated.budget_diff = (updated.actual_price || 0) - updated.estimated_budget;
     updated.budget_ratio = updated.estimated_budget ? ((updated.actual_price / updated.estimated_budget) * 100).toFixed(2) : null;
     
     res.json({ success: true, data: updated, message: '购买计划更新成功' });
@@ -198,7 +199,7 @@ router.delete('/:id', (req, res) => {
   try {
     const { id } = req.params;
     
-    db.prepare('DELETE FROM purchase_plans WHERE id = ?').run(id);
+    db.run('DELETE FROM purchase_plans WHERE id = ?', [id]);
     res.json({ success: true, message: '购买计划删除成功' });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });

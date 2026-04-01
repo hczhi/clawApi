@@ -23,8 +23,7 @@ router.get('/', (req, res) => {
     
     sql += ' ORDER BY sort_order, id';
     
-    const result = db.exec(sql);
-    const categories = result[0] ? result[0].values : [];
+    const categories = db.all(sql, params);
     res.json({ success: true, data: categories });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
@@ -36,21 +35,13 @@ router.get('/', (req, res) => {
  */
 router.get('/:id', (req, res) => {
   try {
-    const result = db.exec(`SELECT * FROM expense_categories WHERE id = ${req.params.id}`);
-    const category = result[0] ? result[0].values[0] : null;
+    const category = db.get('SELECT * FROM expense_categories WHERE id = ?', [req.params.id]);
     
     if (!category) {
       return res.status(404).json({ success: false, error: '分类不存在' });
     }
     
-    // 转换为对象
-    const cols = result[0].columns;
-    const categoryObj = {};
-    cols.forEach((col, idx) => {
-      categoryObj[col] = category[idx];
-    });
-    
-    res.json({ success: true, data: categoryObj });
+    res.json({ success: true, data: category });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
@@ -72,28 +63,20 @@ router.post('/', (req, res) => {
     let pathValue = '/';
     
     if (parent_id) {
-      const result = db.exec(`SELECT path, level FROM expense_categories WHERE id = ${parent_id}`);
-      if (!result[0]) {
+      const parent = db.get('SELECT path, level FROM expense_categories WHERE id = ?', [parent_id]);
+      if (!parent) {
         return res.status(400).json({ success: false, error: '父分类不存在' });
       }
-      const row = result[0].values[0];
-      finalLevel = row[1] + 1;
-      pathValue = row[0] + parent_id + '/';
+      finalLevel = parent.level + 1;
+      pathValue = parent.path + parent_id + '/';
     }
     
-    db.run(`INSERT INTO expense_categories (name, parent_id, level, path, sort_order, color_code, notes) VALUES ('${name}', ${parent_id || 'NULL'}, ${finalLevel}, '${pathValue}', ${sort_order || 0}, '${color_code || 'NULL'}', '${notes || 'NULL'}')`);
+    const result = db.run(
+      'INSERT INTO expense_categories (name, parent_id, level, path, sort_order, color_code, notes) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [name, parent_id || null, finalLevel, pathValue, sort_order || 0, color_code || null, notes || null]
+    );
     
-    const newCategoryResult = db.exec(`SELECT * FROM expense_categories WHERE id = ${db.exec("SELECT last_insert_rowid()")[0].values[0][0]}`);
-    const newCategory = newCategoryResult[0] ? newCategoryResult[0].values[0] : null;
-    
-    // 转换为对象
-    if (newCategory) {
-      const cols = newCategoryResult[0].columns;
-      const categoryObj = {};
-      cols.forEach((col, idx) => {
-        categoryObj[col] = newCategory[idx];
-      });
-    }
+    const newCategory = db.get('SELECT * FROM expense_categories WHERE id = ?', [result.lastInsertRowid]);
     
     res.status(201).json({ success: true, data: newCategory, message: '分类创建成功' });
   } catch (err) {
@@ -107,26 +90,27 @@ router.post('/', (req, res) => {
 router.put('/:id', (req, res) => {
   try {
     const { id } = req.params;
-    const { name, parent_id, sort_order, color_code, notes } = req.body;
+    const existing = db.get('SELECT * FROM expense_categories WHERE id = ?', [id]);
     
-    const existingResult = db.exec(`SELECT * FROM expense_categories WHERE id = ${id}`);
-    if (!existingResult[0]) {
+    if (!existing) {
       return res.status(404).json({ success: false, error: '分类不存在' });
     }
     
-    const existing = existingResult[0].values[0];
-    const cols = existingResult[0].columns;
-    const existingObj = {};
-    cols.forEach((col, idx) => {
-      existingObj[col] = existing[idx];
-    });
+    const { name, parent_id, sort_order, color_code, notes } = req.body;
     
-    // 简化处理，不更新层级路径
-    db.run(`UPDATE expense_categories SET name = '${name || existingObj.name}', parent_id = ${parent_id !== undefined ? parent_id : existingObj.parent_id}, sort_order = ${sort_order !== undefined ? sort_order : existingObj.sort_order}, color_code = '${color_code || existingObj.color_code}', notes = '${notes || existingObj.notes}', updated_at = CURRENT_TIMESTAMP WHERE id = ${id}`);
+    db.run(
+      `UPDATE expense_categories 
+       SET name = COALESCE(?, name),
+           parent_id = COALESCE(?, parent_id),
+           sort_order = COALESCE(?, sort_order),
+           color_code = COALESCE(?, color_code),
+           notes = COALESCE(?, notes),
+           updated_at = CURRENT_TIMESTAMP
+       WHERE id = ?`,
+      [name, parent_id, sort_order, color_code, notes, id]
+    );
     
-    const updatedResult = db.exec(`SELECT * FROM expense_categories WHERE id = ${id}`);
-    const updated = updatedResult[0] ? updatedResult[0].values[0] : null;
-    
+    const updated = db.get('SELECT * FROM expense_categories WHERE id = ?', [id]);
     res.json({ success: true, data: updated, message: '分类更新成功' });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
@@ -141,18 +125,18 @@ router.delete('/:id', (req, res) => {
     const { id } = req.params;
     
     // 检查是否有子分类
-    const childrenResult = db.exec(`SELECT COUNT(*) as count FROM expense_categories WHERE parent_id = ${id}`);
-    if (childrenResult[0].values[0][0] > 0) {
-      return res.status(400).json({ success: false, error: '存在子分类，无法删除' });
+    const children = db.get('SELECT COUNT(*) as count FROM expense_categories WHERE parent_id = ?', [id]);
+    if (children.count > 0) {
+      return res.status(400).json({ success: false, error: '该分类下有子分类，无法删除' });
     }
     
-    // 检查是否有使用该分类的费用记录
-    const expensesResult = db.exec(`SELECT COUNT(*) as count FROM expenses WHERE category_id = ${id}`);
-    if (expensesResult[0].values[0][0] > 0) {
-      return res.status(400).json({ success: false, error: '存在关联的费用记录，无法删除' });
+    // 检查是否有关联的费用
+    const expenses = db.get('SELECT COUNT(*) as count FROM expenses WHERE category_id = ?', [id]);
+    if (expenses.count > 0) {
+      return res.status(400).json({ success: false, error: '该分类下已有关联费用，无法删除' });
     }
     
-    db.run(`DELETE FROM expense_categories WHERE id = ${id}`);
+    db.run('DELETE FROM expense_categories WHERE id = ?', [id]);
     res.json({ success: true, message: '分类删除成功' });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });

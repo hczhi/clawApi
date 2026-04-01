@@ -40,7 +40,7 @@ router.get('/', (req, res) => {
     sql += ` LIMIT ? OFFSET ?`;
     params.push(parseInt(limit), offset);
     
-    const reminders = db.prepare(sql).all(...params);
+    const reminders = db.all(sql, params);
     
     // 总数统计
     let countSql = 'SELECT COUNT(*) as total FROM reminders WHERE 1=1';
@@ -51,7 +51,8 @@ router.get('/', (req, res) => {
     if (due_date_to) { countSql += ' AND due_date <= ?'; countParams.push(due_date_to); }
     if (entity_type) { countSql += ' AND entity_type = ?'; countParams.push(entity_type); }
     
-    const { total } = db.prepare(countSql).get(...countParams);
+    const countResult = db.get(countSql, countParams);
+    const total = countResult ? countResult.total : 0;
     
     res.json({ success: true, data: reminders, pagination: { page: parseInt(page), limit: parseInt(limit), total } });
   } catch (err) {
@@ -66,12 +67,12 @@ router.get('/upcoming', (req, res) => {
   try {
     const daysAhead = parseInt(req.query.days || 7);
     
-    const upcoming = db.prepare(`
+    const upcoming = db.all(`
       SELECT * FROM reminders 
       WHERE status = 'pending' 
         AND due_date BETWEEN date('now') AND date('now', '+' || ? || ' days')
       ORDER BY due_date ASC
-    `).all(daysAhead);
+    `, [daysAhead]);
     
     res.json({ success: true, data: upcoming, count: upcoming.length });
   } catch (err) {
@@ -84,7 +85,7 @@ router.get('/upcoming', (req, res) => {
  */
 router.get('/:id', (req, res) => {
   try {
-    const reminder = db.prepare('SELECT * FROM reminders WHERE id = ?').get(req.params.id);
+    const reminder = db.get('SELECT * FROM reminders WHERE id = ?', [req.params.id]);
     
     if (!reminder) {
       return res.status(404).json({ success: false, error: '提醒不存在' });
@@ -107,12 +108,12 @@ router.post('/', (req, res) => {
       return res.status(400).json({ success: false, error: '标题、截止日期、提醒日期不能为空' });
     }
     
-    const result = db.prepare(`
+    const result = db.run(`
       INSERT INTO reminders (title, reminder_type, due_date, reminder_date, entity_type, entity_id, notes)
       VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).run(title, reminder_type || 'custom', due_date, reminder_date, entity_type || null, entity_id || null, notes || null);
+    `, [title, reminder_type || 'custom', due_date, reminder_date, entity_type || null, entity_id || null, notes || null]);
     
-    const newReminder = db.prepare('SELECT * FROM reminders WHERE id = ?').get(result.lastInsertRowid);
+    const newReminder = db.get('SELECT * FROM reminders WHERE id = ?', [result.lastInsertRowid]);
     
     res.status(201).json({ success: true, data: newReminder, message: '提醒创建成功' });
   } catch (err) {
@@ -128,12 +129,12 @@ router.put('/:id', (req, res) => {
     const { id } = req.params;
     const { title, due_date, reminder_date, status, notification_sent, completed_date, notes } = req.body;
     
-    const existing = db.prepare('SELECT * FROM reminders WHERE id = ?').get(id);
+    const existing = db.get('SELECT * FROM reminders WHERE id = ?', [id]);
     if (!existing) {
       return res.status(404).json({ success: false, error: '提醒不存在' });
     }
     
-    db.prepare(`
+    db.run(`
       UPDATE reminders 
       SET title = COALESCE(?, title),
           due_date = COALESCE(?, due_date),
@@ -145,9 +146,9 @@ router.put('/:id', (req, res) => {
           notes = COALESCE(?, notes),
           updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
-    `).run(title, due_date, reminder_date, status, notification_sent, notification_sent, completed_date, notes, id);
+    `, [title, due_date, reminder_date, status, notification_sent, notification_sent, completed_date, notes, id]);
     
-    const updated = db.prepare('SELECT * FROM reminders WHERE id = ?').get(id);
+    const updated = db.get('SELECT * FROM reminders WHERE id = ?', [id]);
     res.json({ success: true, data: updated, message: '提醒更新成功' });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
@@ -161,7 +162,7 @@ router.delete('/:id', (req, res) => {
   try {
     const { id } = req.params;
     
-    db.prepare('DELETE FROM reminders WHERE id = ?').run(id);
+    db.run('DELETE FROM reminders WHERE id = ?', [id]);
     res.json({ success: true, message: '提醒删除成功' });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });

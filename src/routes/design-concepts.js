@@ -40,7 +40,7 @@ router.get('/', (req, res) => {
     sql += ` LIMIT ? OFFSET ?`;
     params.push(parseInt(limit), offset);
     
-    const designs = db.prepare(sql).all(...params);
+    const designs = db.all(sql, params);
     
     // 总数统计
     let countSql = 'SELECT COUNT(*) as total FROM design_concepts WHERE 1=1';
@@ -51,7 +51,8 @@ router.get('/', (req, res) => {
     if (priority) { countSql += ' AND priority = ?'; countParams.push(priority); }
     if (search) { countSql += ' AND (title LIKE ? OR description LIKE ?)'; countParams.push(`%${search}%`, `%${search}%`); }
     
-    const { total } = db.prepare(countSql).get(...countParams);
+    const countResult = db.get(countSql, countParams);
+    const total = countResult ? countResult.total : 0;
     
     res.json({ success: true, data: designs, pagination: { page: parseInt(page), limit: parseInt(limit), total } });
   } catch (err) {
@@ -64,7 +65,7 @@ router.get('/', (req, res) => {
  */
 router.get('/:id', (req, res) => {
   try {
-    const design = db.prepare('SELECT * FROM design_concepts WHERE id = ?').get(req.params.id);
+    const design = db.get('SELECT * FROM design_concepts WHERE id = ?', [req.params.id]);
     
     if (!design) {
       return res.status(404).json({ success: false, error: '设计方案不存在' });
@@ -87,13 +88,13 @@ router.post('/', (req, res) => {
       return res.status(400).json({ success: false, error: '方案标题不能为空' });
     }
     
-    const result = db.prepare(`
+    const result = db.run(`
       INSERT INTO design_concepts 
       (title, description, style, category, source_type, image_urls, reference_link, budget_min, budget_max, priority, matched_spaces, tags, notes)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(title, description || null, style || null, category || null, source_type || null, image_urls || null, reference_link || null, budget_min || null, budget_max || null, priority || 'medium', matched_spaces || null, tags || null, notes || null);
+    `, [title, description || null, style || null, category || null, source_type || null, image_urls || null, reference_link || null, budget_min || null, budget_max || null, priority || 'medium', matched_spaces || null, tags || null, notes || null]);
     
-    const newDesign = db.prepare('SELECT * FROM design_concepts WHERE id = ?').get(result.lastInsertRowid);
+    const newDesign = db.get('SELECT * FROM design_concepts WHERE id = ?', [result.lastInsertRowid]);
     
     res.status(201).json({ success: true, data: newDesign, message: '设计方案创建成功' });
   } catch (err) {
@@ -109,12 +110,12 @@ router.put('/:id', (req, res) => {
     const { id } = req.params;
     const { title, description, style, category, source_type, image_urls, reference_link, budget_min, budget_max, priority, matched_spaces, tags, notes } = req.body;
     
-    const existing = db.prepare('SELECT * FROM design_concepts WHERE id = ?').get(id);
+    const existing = db.get('SELECT * FROM design_concepts WHERE id = ?', [id]);
     if (!existing) {
       return res.status(404).json({ success: false, error: '设计方案不存在' });
     }
     
-    db.prepare(`
+    db.run(`
       UPDATE design_concepts 
       SET title = COALESCE(?, title),
           description = COALESCE(?, description),
@@ -131,9 +132,9 @@ router.put('/:id', (req, res) => {
           notes = COALESCE(?, notes),
           updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
-    `).run(title, description, style, category, source_type, image_urls, reference_link, budget_min, budget_max, priority, matched_spaces, tags, notes, id);
+    `, [title, description, style, category, source_type, image_urls, reference_link, budget_min, budget_max, priority, matched_spaces, tags, notes, id]);
     
-    const updated = db.prepare('SELECT * FROM design_concepts WHERE id = ?').get(id);
+    const updated = db.get('SELECT * FROM design_concepts WHERE id = ?', [id]);
     res.json({ success: true, data: updated, message: '设计方案更新成功' });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
@@ -147,7 +148,7 @@ router.delete('/:id', (req, res) => {
   try {
     const { id } = req.params;
     
-    db.prepare('DELETE FROM design_concepts WHERE id = ?').run(id);
+    db.run('DELETE FROM design_concepts WHERE id = ?', [id]);
     res.json({ success: true, message: '设计方案删除成功' });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
