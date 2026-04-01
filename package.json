@@ -1,0 +1,35 @@
+{
+  "name": "renovation-management-api",
+  "version": "1.0.0",
+  "description": "房屋装修管理系统 - RESTful API",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "init-db": "node scripts/init-database.js",
+    "seed": "node scripts/seed-data.js",
+    "test": "jest"
+  },
+  "keywords": [
+    "renovation",
+    "management",
+    "api",
+    "sqlite"
+  ],
+  "author": "洪成智",
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^16.6.1",
+    "express": "^4.22.1",
+    "multer": "^1.4.5-lts.1",
+    "sql.js": "^1.14.1",
+    "uuid": "^9.0.0",
+    "validator": "^13.11.0"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "nodemon": "^3.0.2",
+    "supertest": "^6.3.3"
+  }
+}
