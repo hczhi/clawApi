@@ -7,7 +7,7 @@ const router = express.Router();
  */
 router.get('/', (req, res) => {
   try {
-    const { type, status, search } = req.query;
+    const { type, status, search, page = 1, limit = 20 } = req.query;
     
     let sql = 'SELECT * FROM vendors WHERE 1=1';
     const params = [];
@@ -27,8 +27,24 @@ router.get('/', (req, res) => {
     
     sql += ' ORDER BY rating DESC, id DESC';
     
+    // 分页
+    const offset = (page - 1) * parseInt(limit);
+    sql += ` LIMIT ? OFFSET ?`;
+    params.push(parseInt(limit), offset);
+    
     const vendors = db.all(sql, params);
-    res.json({ success: true, data: vendors });
+    
+    // 总数统计
+    let countSql = 'SELECT COUNT(*) as total FROM vendors WHERE 1=1';
+    const countParams = [];
+    if (type) { countSql += ' AND type = ?'; countParams.push(type); }
+    if (status) { countSql += ' AND status = ?'; countParams.push(status); }
+    if (search) { countSql += ' AND (name LIKE ? OR company_name LIKE ? OR contact_person LIKE ?)'; countParams.push(`%${search}%`, `%${search}%`, `%${search}%`); }
+    
+    const countResult = db.get(countSql, countParams);
+    const total = countResult ? countResult.total : 0;
+    
+    res.json({ success: true, data: vendors, pagination: { page: parseInt(page), limit: parseInt(limit), total } });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }

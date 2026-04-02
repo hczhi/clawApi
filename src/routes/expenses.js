@@ -160,7 +160,7 @@ router.post('/', (req, res) => {
 router.put('/:id', (req, res) => {
   try {
     const { id } = req.params;
-    const { title, amount, payment_method, payment_date, status, notes } = req.body;
+    const { title, amount, payment_method, payment_date, status, notes, payer_names } = req.body;
     
     const existing = db.get('SELECT * FROM expenses WHERE id = ?', [id]);
     if (!existing) {
@@ -175,9 +175,10 @@ router.put('/:id', (req, res) => {
           payment_date = COALESCE(?, payment_date),
           status = COALESCE(?, status),
           notes = COALESCE(?, notes),
+          payer_names = COALESCE(?, payer_names),
           updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
-    `, [title, amount, payment_method, payment_date, status, notes, id]);
+    `, [title, amount, payment_method, payment_date, status, notes, payer_names, id]);
     
     const updated = db.get(`
       SELECT 

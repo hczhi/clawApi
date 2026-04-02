@@ -184,11 +184,16 @@ function run(sql, params = []) {
   stmt.free();
   
   // 对于插入操作，返回最后插入的 ID
+  let result = { changes: dbInstance.getRowsModified() };
   if (sql.trim().toUpperCase().startsWith('INSERT')) {
     const res = dbInstance.exec('SELECT last_insert_rowid()');
-    return { lastInsertRowid: res[0].values[0][0] };
+    result.lastInsertRowid = res[0].values[0][0];
   }
-  return { changes: dbInstance.getRowsModified() };
+  
+  // 自动保存到文件
+  saveDatabase();
+  
+  return result;
 }
 
 /**

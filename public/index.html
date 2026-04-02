@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>装修管理系统 - 🦁 ClawApi</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        [v-cloak] { display: none; }
+        .sidebar-item-active {
+            background-color: #f3f4f6;
+            color: #1f2937;
+            border-left: 4px solid #3b82f6;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-900">
+    <div id="app" v-cloak class="flex h-screen overflow-hidden">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-white border-r flex-shrink-0 flex flex-col">
+            <div class="p-6 flex items-center space-x-2">
+                <i data-lucide="home" class="text-blue-600"></i>
+                <h1 class="text-xl font-bold tracking-tight">装修管理系统</h1>
+            </div>
+            <nav class="flex-1 overflow-y-auto py-4">
+                <div v-for="menu in menus" :key="menu.id">
+                    <button 
+                        @click="currentMenu = menu.id"
+                        class="w-full flex items-center space-x-3 px-6 py-3 text-sm font-medium transition-colors hover:bg-gray-50"
+                        :class="{'sidebar-item-active': currentMenu === menu.id, 'text-gray-500': currentMenu !== menu.id}"
+                    >
+                        <i :data-lucide="menu.icon" class="w-5 h-5"></i>
+                        <span>{{ menu.name }}</span>
+                    </button>
+                </div>
+            </nav>
+            <div class="p-4 border-t text-xs text-gray-400 text-center">
+                ClawApi v1.0.0
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 flex flex-col overflow-hidden">
+            <!-- Header -->
+            <header class="h-16 bg-white border-b flex items-center justify-between px-8">
+                <h2 class="text-lg font-semibold">{{ currentMenuName }}</h2>
+                <div class="flex items-center space-x-4">
+                    <button @click="fetchData" class="p-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors">
+                        <i data-lucide="rotate-cw" class="w-5 h-5"></i>
+                    </button>
+                    <button @click="showAddModal = true" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors flex items-center space-x-2">
+                        <i data-lucide="plus" class="w-4 h-4"></i>
+                        <span>新增{{ currentMenuName }}</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Table Content -->
+            <div class="flex-1 overflow-auto p-8">
+                <div class="bg-white rounded-xl border shadow-sm overflow-hidden">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-gray-50 border-b">
+                                <th v-for="col in columns" :key="col.key" class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                    {{ col.label }}
+                                </th>
+                                <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y">
+                            <tr v-if="loading" v-for="i in 5" :key="i" class="animate-pulse">
+                                <td v-for="col in columns" class="px-6 py-4"><div class="h-4 bg-gray-200 rounded w-24"></div></td>
+                                <td class="px-6 py-4 text-right"><div class="h-4 bg-gray-200 rounded w-16 ml-auto"></div></td>
+                            </tr>
+                            <tr v-else-if="items.length === 0">
+                                <td :colspan="columns.length + 1" class="px-6 py-12 text-center text-gray-500">
+                                    暂无数据
+                                </td>
+                            </tr>
+                            <tr v-else v-for="item in items" :key="item.id" class="hover:bg-gray-50 transition-colors">
+                                <td v-for="col in columns" :key="col.key" class="px-6 py-4 text-sm">
+                                    <template v-if="col.type === 'amount'">
+                                        <span class="font-mono text-gray-600">¥{{ formatNumber(item[col.key]) }}</span>
+                                    </template>
+                                    <template v-else-if="col.type === 'status'">
+                                        <span :class="getStatusClass(item[col.key])" class="px-2 py-1 rounded-full text-xs font-medium">
+                                            {{ item[col.key] }}
+                                        </span>
+                                    </template>
+                                    <template v-else-if="col.type === 'date'">
+                                        {{ formatDate(item[col.key]) }}
+                                    </template>
+                                    <template v-else>
+                                        {{ item[col.key] }}
+                                    </template>
+                                </td>
+                                <td class="px-6 py-4 text-right space-x-2">
+                                    <button @click="editItem(item)" class="text-blue-600 hover:text-blue-800 text-sm font-medium">编辑</button>
+                                    <button @click="deleteItem(item.id)" class="text-red-600 hover:text-red-800 text-sm font-medium">删除</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                <div class="mt-4 flex items-center justify-between" v-if="pagination.total > 0">
+                    <p class="text-sm text-gray-500">
+                        显示 {{ (pagination.page - 1) * pagination.limit + 1 }} 到 {{ Math.min(pagination.page * pagination.limit, pagination.total) }} 条，共 {{ pagination.total }} 条
+                    </p>
+                    <div class="flex space-x-2">
+                        <button 
+                            @click="changePage(pagination.page - 1)" 
+                            :disabled="pagination.page === 1"
+                            class="px-3 py-1 border rounded bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >上一页</button>
+                        <button 
+                            @click="changePage(pagination.page + 1)" 
+                            :disabled="pagination.page * pagination.limit >= pagination.total"
+                            class="px-3 py-1 border rounded bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >下一页</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Add/Edit Modal -->
+        <div v-if="showAddModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-xl shadow-xl w-full max-w-2xl overflow-hidden">
+                <div class="px-6 py-4 border-b flex items-center justify-between">
+                    <h3 class="text-lg font-bold">{{ isEditing ? '编辑' : '新增' }}{{ currentMenuName }}</h3>
+                    <button @click="closeModal" class="text-gray-400 hover:text-gray-600">
+                        <i data-lucide="x" class="w-6 h-6"></i>
+                    </button>
+                </div>
+                <form @submit.prevent="saveItem" class="p-6">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div v-for="field in formFields" :key="field.key" :class="field.fullWidth ? 'col-span-2' : ''">
+                            <label :for="field.key" class="block text-sm font-medium text-gray-700 mb-1">{{ field.label }}</label>
+                            
+                            <select v-if="field.type === 'select'" v-model="form[field.key]" :id="field.key" class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                                <option v-for="opt in field.options" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+                            </select>
+                            
+                            <textarea v-else-if="field.type === 'textarea'" v-model="form[field.key]" :id="field.key" rows="3" class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"></textarea>
+                            
+                            <input v-else :type="field.type || 'text'" v-model="form[field.key]" :id="field.key" class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                        </div>
+                    </div>
+                    <div class="mt-8 flex justify-end space-x-3">
+                        <button type="button" @click="closeModal" class="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-lg">取消</button>
+                        <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm">
+                            {{ saving ? '保存中...' : '确认保存' }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/app.js"></script>
+</body>
+</html>

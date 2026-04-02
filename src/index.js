@@ -31,6 +31,15 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // 静态文件服务（上传的文件）
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
+// 静态文件服务（前端界面）
+app.use(express.static(path.join(__dirname, '../public')));
+
+// 静态文件服务（移动端应用）
+app.use('/app', express.static(path.join(__dirname, '../public/app')));
+
+// 静态文件服务（图片上传目录）
+app.use('/data/image', express.static(path.join(__dirname, '../data/image')));
+
 // 健康检查接口
 app.use('/api/health', healthRouter);
 

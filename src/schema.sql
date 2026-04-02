@@ -95,7 +95,7 @@ CREATE TABLE IF NOT EXISTS design_concepts (
     description TEXT,
     style TEXT,
     category TEXT,
-    source_type TEXT CHECK(source_type IN ('xiaohongshu', 'haozhu', 'instagram', 'pinterest', 'other')),
+    source_type TEXT CHECK(source_type IN ('xiaohongshu', 'haozhu', 'instagram', 'pinterest', 'taobao', 'jingdong', 'douyin', 'other')),
     image_urls TEXT,
     reference_link TEXT,
     budget_min DECIMAL(12,2),

@@ -7,7 +7,7 @@ const router = express.Router();
  */
 router.get('/', (req, res) => {
   try {
-    const { level, parent_id } = req.query;
+    const { level, parent_id, page = 1, limit = 20 } = req.query;
     
     let sql = 'SELECT * FROM expense_categories WHERE 1=1';
     const params = [];
@@ -23,8 +23,23 @@ router.get('/', (req, res) => {
     
     sql += ' ORDER BY sort_order, id';
     
+    // 分页
+    const offset = (page - 1) * parseInt(limit);
+    sql += ` LIMIT ? OFFSET ?`;
+    params.push(parseInt(limit), offset);
+    
     const categories = db.all(sql, params);
-    res.json({ success: true, data: categories });
+    
+    // 总数统计
+    let countSql = 'SELECT COUNT(*) as total FROM expense_categories WHERE 1=1';
+    const countParams = [];
+    if (level) { countSql += ' AND level = ?'; countParams.push(level); }
+    if (parent_id) { countSql += ' AND parent_id = ?'; countParams.push(parent_id); }
+    
+    const countResult = db.get(countSql, countParams);
+    const total = countResult ? countResult.total : 0;
+    
+    res.json({ success: true, data: categories, pagination: { page: parseInt(page), limit: parseInt(limit), total } });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
