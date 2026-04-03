@@ -42,7 +42,8 @@ const app = createApp({
         ExpenseFormView: loadVueComponent('ExpenseFormView'),
         ConceptsView: loadVueComponent('ConceptsView'),
         ConceptDetailView: loadVueComponent('ConceptDetailView'),
-        ConceptFormView: loadVueComponent('ConceptFormView')
+        ConceptFormView: loadVueComponent('ConceptFormView'),
+        AssistantView: loadVueComponent('AssistantView')
     },
     setup() {
         const store = useAppStore();

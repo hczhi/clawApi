@@ -44,7 +44,7 @@
         
         <!-- Navigation Header (Dynamic & Minimal) -->
         <header class="h-16 flex items-center justify-between px-5 fixed top-0 w-full z-50 transition-all duration-500" 
-                :class="[state.currentView === 'home' ? (state.scrolled ? 'bg-white/80 backdrop-blur-xl border-b border-black/5' : 'bg-transparent text-white') : 'bg-white/80 backdrop-blur-xl border-b border-black/5']">
+                :class="[state.currentView === 'home' ? (state.scrolled ? 'bg-white/80 backdrop-blur-xl border-b border-black/5' : 'bg-transparent text-white') : 'bg-transparent']">
             <div class="flex-1 flex justify-start">
                 <button v-if="state.currentView !== 'home'" @click="actions.goBack" class="w-10 h-10 flex items-center justify-center -ml-2 rounded-full hover:bg-black/5 active:scale-90 transition-all">
                     <i data-lucide="arrow-left" class="w-6 h-6" :class="state.currentView === 'home' && !state.scrolled ? 'text-white' : 'text-brand-dark'"></i>
@@ -94,6 +94,15 @@
                         <!-- Add Expense -->
                         <button @click="actions.navigate('expense-form', { mode: 'add' }); state.fabOpen = false" class="flex items-center justify-center bg-white w-[56px] h-[56px] rounded-full shadow-[0_10px_40px_rgb(0,0,0,0.12)] border border-black/5 active:scale-95 transition-all duration-300 hover:-translate-y-1 hover:bg-black hover:text-white text-brand-dark group">
                             <span class="text-[14px] font-bold group-hover:text-white">记账</span>
+                        </button>
+                    </div>
+                </transition>
+                
+                <transition name="slide-up-fade">
+                    <div v-if="state.fabOpen" class="absolute -top-[88px] left-1/2 -translate-x-1/2 pointer-events-auto" style="transition-delay: 100ms;">
+                        <!-- AI Assistant -->
+                        <button @click="actions.navigate('assistant'); state.fabOpen = false" class="flex items-center justify-center bg-white w-[56px] h-[56px] rounded-full shadow-[0_10px_40px_rgb(0,0,0,0.12)] border border-black/5 active:scale-95 transition-all duration-300 hover:-translate-y-1 hover:bg-brand-accent hover:text-white text-brand-dark group">
+                            <span class="text-[14px] font-bold group-hover:text-white">AI</span>
                         </button>
                     </div>
                 </transition>

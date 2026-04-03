@@ -42,6 +42,11 @@
                     <span class="absolute -left-4 top-1/2 -translate-y-1/2 w-2 h-[2px] bg-black opacity-0 group-hover:opacity-100 transition-opacity"></span>
                     灵感
                 </button>
+                
+                <button @click.stop.prevent="actions.navigate('assistant')" class="text-left text-lg font-bold tracking-widest text-black/40 hover:text-black transition-colors relative z-50 cursor-pointer group">
+                    <span class="absolute -left-4 top-1/2 -translate-y-1/2 w-2 h-[2px] bg-black opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                    AI 助手
+                </button>
             </div>
 
             <!-- Right Progress (Like Color Selector) -->
@@ -73,7 +78,7 @@
             </div> -->
         </div>
 
-        <!-- Recent Section -->
+        <!-- Recent Section 
         <div id="recent-section" class="relative bg-white z-30 min-h-[50vh] px-6 py-16 rounded-t-[3rem] shadow-[0_-20px_40px_rgba(0,0,0,0.03)]">
             <div class="max-w-md mx-auto">
                 <div class="flex items-end justify-between mb-10 border-b border-black/5 pb-4">
@@ -117,7 +122,7 @@
                     <p class="text-xs font-bold text-black/40 tracking-widest uppercase">No Recent Records</p>
                 </div>
             </div>
-        </div>
+        </div>-->
     </div>
 </template>
 

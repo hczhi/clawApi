@@ -74,7 +74,8 @@ const computedProps = {
             'expense-form': state.formData.id ? '编辑账单' : '记一笔账',
             'concepts': '灵感收集',
             'concept-detail': '灵感详情',
-            'concept-form': state.conceptForm.id ? '编辑灵感' : '添加灵感'
+            'concept-form': state.conceptForm.id ? '编辑灵感' : '添加灵感',
+            'assistant': 'AI 助手'
         };
         return titles[state.currentView] || '装修管理';
     }),
@@ -86,7 +87,8 @@ const computedProps = {
             'expense-form': 'ExpenseFormView',
             'concepts': 'ConceptsView',
             'concept-detail': 'ConceptDetailView',
-            'concept-form': 'ConceptFormView'
+            'concept-form': 'ConceptFormView',
+            'assistant': 'AssistantView'
         };
         return map[state.currentView] || 'HomeView';
     })

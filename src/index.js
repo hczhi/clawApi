@@ -19,6 +19,7 @@ const remindersRouter = require('./routes/reminders');
 const vendorsRouter = require('./routes/vendors');
 const categoriesRouter = require('./routes/categories');
 const healthRouter = require('./routes/health');
+const aiChatRouter = require('./routes/ai-chat');
 
 // 初始化 Express 应用
 const app = express();
@@ -54,6 +55,7 @@ app.use('/api/spaces', spacesRouter);
 app.use('/api/reminders', remindersRouter);
 app.use('/api/vendors', vendorsRouter);
 app.use('/api/categories', categoriesRouter);
+app.use('/api/ai-chat', aiChatRouter);
 
 // 根路径欢迎
 app.get('/', (req, res) => {
