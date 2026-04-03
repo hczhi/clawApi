@@ -4,12 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>我的新家 - 装修管理</title>
+    <link rel="shortcut icon" href="//ai-1303208826.cos.ap-guangzhou.myqcloud.com/WorkbenchApp/sklogo3_n.png">
     <meta name="theme-color" content="#ffffff">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://unpkg.com/dayjs@1.11.10/dayjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue3-sfc-loader/dist/vue3-sfc-loader.js"></script>
+    <script type="module" src="/app/js/app.js"></script>
     <link rel="stylesheet" href="/app/css/style.css">
     <script>
         tailwind.config = {
@@ -41,20 +44,20 @@
         
         <!-- Navigation Header (Dynamic & Minimal) -->
         <header class="h-16 flex items-center justify-between px-5 fixed top-0 w-full z-50 transition-all duration-500" 
-                :class="[currentView === 'home' ? (scrolled ? 'bg-white/80 backdrop-blur-xl border-b border-black/5' : 'bg-transparent text-white') : 'bg-white/80 backdrop-blur-xl border-b border-black/5']">
+                :class="[state.currentView === 'home' ? (state.scrolled ? 'bg-white/80 backdrop-blur-xl border-b border-black/5' : 'bg-transparent text-white') : 'bg-white/80 backdrop-blur-xl border-b border-black/5']">
             <div class="flex-1 flex justify-start">
-                <button v-if="currentView !== 'home'" @click="goBack" class="w-10 h-10 flex items-center justify-center -ml-2 rounded-full hover:bg-black/5 active:scale-90 transition-all">
-                    <i data-lucide="arrow-left" class="w-6 h-6" :class="currentView === 'home' && !scrolled ? 'text-white' : 'text-brand-dark'"></i>
+                <button v-if="state.currentView !== 'home'" @click="actions.goBack" class="w-10 h-10 flex items-center justify-center -ml-2 rounded-full hover:bg-black/5 active:scale-90 transition-all">
+                    <i data-lucide="arrow-left" class="w-6 h-6" :class="state.currentView === 'home' && !state.scrolled ? 'text-white' : 'text-brand-dark'"></i>
                 </button>
             </div>
             
             <h1 class="text-lg font-medium tracking-wide flex-1 text-center truncate transition-opacity duration-300"
-                :class="[currentView === 'home' && !scrolled ? 'opacity-0' : 'opacity-100']">
+                :class="[state.currentView === 'home' && !state.scrolled ? 'opacity-0' : 'opacity-100']">
                 {{ viewTitle }}
             </h1>
             
             <div class="flex-1 flex justify-end">
-                <button v-if="currentView === 'expenses'" @click="navigate('expense-form', { mode: 'add' })" class="w-10 h-10 flex items-center justify-center -mr-2 rounded-full hover:bg-black/5 active:scale-90 transition-all">
+                <button v-if="['expenses', 'concepts'].includes(state.currentView)" @click="actions.navigate(state.currentView === 'expenses' ? 'expense-form' : 'concept-form', { mode: 'add' })" class="w-10 h-10 flex items-center justify-center -mr-2 rounded-full hover:bg-black/5 active:scale-90 transition-all">
                     <i data-lucide="plus" class="w-6 h-6 text-brand-dark"></i>
                 </button>
             </div>
@@ -62,511 +65,45 @@
 
         <!-- Main Content Area with View Transitions -->
         <main class="flex-1 overflow-hidden relative w-full h-full">
-            <transition :name="transitionName">
-                
-                <!-- HOME VIEW (Bold & Editorial) -->
-                <div v-if="currentView === 'home'" class="absolute inset-0 overflow-y-auto scroll-smooth page-content bg-white" @scroll="handleScroll">
-                    
-                    <!-- Hero Section -->
-                    <div class="relative h-[65vh] w-full flex flex-col justify-end pb-12 px-6 overflow-hidden">
-                        <!-- Background Image -->
-                        <div class="absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform duration-[10s] ease-out hover:scale-105" :style="{ backgroundImage: 'url(' + currentHeroImage + ')' }"></div>
-                        <!-- Gradient Overlay -->
-                        <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/10"></div>
-                        
-                        <div class="relative z-10 text-white">
-                            <p class="text-xs font-semibold tracking-[0.2em] uppercase text-white/70 mb-3 ml-1">{{ currentDate }}</p>
-                            <h2 class="font-serif text-5xl md:text-6xl font-normal leading-[1.1] tracking-tight mb-6">
-                                构筑<br>
-                                <span class="italic text-brand-gold">梦想空间</span>
-                            </h2>
-                            
-                            <!-- Glassmorphism Stats Bar -->
-                            <div class="flex items-center space-x-4 bg-white/10 backdrop-blur-md border border-white/20 rounded-[28px] p-4 shadow-2xl">
-                                <div class="flex-1" @click="navigate('expenses')">
-                                    <p class="text-[10px] text-white/60 uppercase tracking-widest mb-1">已支出</p>
-                                    <p class="text-xl font-bold font-sans tracking-tight">¥{{ formatAmount(totalExpenses) }}</p>
-                                </div>
-                                <div class="w-px h-8 bg-white/20"></div>
-                                <div class="flex-1 pl-2">
-                                    <p class="text-[10px] text-white/60 uppercase tracking-widest mb-1">装修进度</p>
-                                    <div class="flex items-baseline space-x-1">
-                                        <p class="text-xl font-bold font-sans tracking-tight">{{ renovationProgress }}</p>
-                                        <span class="text-xs text-white/60">%</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Content Section (White Background) -->
-                    <div class="relative z-20 bg-brand-light -mt-6 rounded-t-[32px] pt-8 pb-32 px-6">
-                        <div class="w-12 h-1.5 bg-black/10 rounded-full mx-auto mb-8"></div>
-                        
-                        <!-- Quick Actions (Minimal Grid) -->
-                        <div class="mb-12">
-                            <h3 class="text-xs font-bold text-brand-gray uppercase tracking-widest mb-5 ml-1">功能矩阵</h3>
-                            <div class="grid grid-cols-2 gap-4">
-                                <button @click="navigate('expenses')" class="bg-white rounded-[24px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-black/[0.03] flex flex-col items-start active:scale-95 transition-all duration-300">
-                                    <div class="w-12 h-12 rounded-full bg-brand-dark text-white flex items-center justify-center mb-4">
-                                        <i data-lucide="wallet" class="w-5 h-5"></i>
-                                    </div>
-                                    <span class="font-medium text-brand-dark text-lg">账单管理</span>
-                                    <span class="text-xs text-brand-gray mt-1">记录每一笔花销</span>
-                                </button>
-                                
-                                <button @click="navigate('concepts')" class="bg-white/60 rounded-[24px] p-6 border border-black/[0.03] flex flex-col items-start active:scale-95 transition-all duration-300">
-                                    <div class="w-12 h-12 rounded-full bg-brand-gold/10 text-brand-gold flex items-center justify-center mb-4">
-                                        <i data-lucide="image" class="w-5 h-5"></i>
-                                    </div>
-                                    <span class="font-medium text-brand-dark text-lg">装修参考</span>
-                                    <span class="text-xs text-brand-gray mt-1">灵感与设计图</span>
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <!-- Recent Activities (Elegant List) -->
-                        <div v-if="recentExpenses.length > 0">
-                            <div class="flex items-center justify-between mb-5 ml-1">
-                                <h3 class="text-xs font-bold text-brand-gray uppercase tracking-widest">最新动态</h3>
-                                <button @click="navigate('expenses')" class="text-xs font-semibold text-brand-accent flex items-center">
-                                    全部 <i data-lucide="arrow-right" class="w-3 h-3 ml-1"></i>
-                                </button>
-                            </div>
-                            
-                            <div class="space-y-3">
-                                <div v-for="expense in recentExpenses" :key="expense.id" @click="navigate('expense-detail', { id: expense.id })" class="bg-white rounded-[24px] p-4 flex items-center shadow-[0_4px_20px_rgb(0,0,0,0.03)] active:scale-95 transition-all cursor-pointer group">
-                                    <div class="w-12 h-12 rounded-2xl flex items-center justify-center mr-4 transition-transform group-active:scale-90" :class="getCategoryColorClass(expense.category_name)">
-                                        <i :data-lucide="getCategoryIcon(expense.category_name)" class="w-5 h-5"></i>
-                                    </div>
-                                    <div class="flex-1 min-w-0">
-                                        <h4 class="font-semibold text-brand-dark text-[15px] truncate">{{ expense.title }}</h4>
-                                        <div class="flex items-center text-[11px] text-brand-gray mt-1 tracking-wide">
-                                            <span>{{ formatDate(expense.payment_date) }}</span>
-                                            <span class="mx-1.5 w-1 h-1 rounded-full bg-brand-gray/30"></span>
-                                            <span>{{ expense.category_name || '未分类' }}</span>
-                                        </div>
-                                    </div>
-                                    <div class="text-right ml-2">
-                                        <p class="font-sans font-bold text-brand-dark text-[17px]">-{{ formatAmount(expense.amount) }}</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- EXPENSES LIST VIEW -->
-                <div v-else-if="currentView === 'expenses'" class="absolute inset-0 flex flex-col bg-brand-light page-content pt-16">
-                    <!-- Premium Header Area -->
-                    <div class="px-6 py-8 relative z-10">
-                        <p class="text-[11px] font-bold text-brand-gray uppercase tracking-widest mb-2 ml-1">累计投入</p>
-                        <div class="flex items-baseline space-x-1">
-                            <span class="text-4xl md:text-5xl font-sans font-bold text-brand-dark tracking-tight">¥{{ formatAmount(totalExpenses) }}</span>
-                        </div>
-                    </div>
-                    
-                    <!-- Elegant List -->
-                    <div class="flex-1 overflow-y-auto pb-32 px-5 scroll-smooth">
-                        <div v-if="loading" class="flex justify-center items-center py-20">
-                            <div class="w-8 h-8 border-2 border-brand-dark border-t-transparent rounded-full animate-spin"></div>
-                        </div>
-                        <div v-else-if="expenses.length === 0" class="flex flex-col items-center justify-center py-32 opacity-40">
-                            <i data-lucide="receipt" class="w-16 h-16 text-brand-gray mb-6"></i>
-                            <p class="text-sm font-medium tracking-wide">空空如也，开始记录第一笔开销吧</p>
-                        </div>
-                        <div v-else class="space-y-4">
-                            <div v-for="expense in expenses" :key="expense.id" @click="navigate('expense-detail', { id: expense.id })" class="bg-white rounded-[24px] p-4 flex items-center shadow-[0_8px_30px_rgb(0,0,0,0.03)] active:scale-95 transition-all duration-300 cursor-pointer">
-                                <div class="w-14 h-14 rounded-[20px] flex items-center justify-center mr-4 shadow-inner" :class="getCategoryColorClass(expense.category_name)">
-                                    <i :data-lucide="getCategoryIcon(expense.category_name)" class="w-6 h-6"></i>
-                                </div>
-                                <div class="flex-1 min-w-0">
-                                    <h4 class="font-semibold text-brand-dark text-[16px] truncate mb-1.5">{{ expense.title }}</h4>
-                                    <div class="flex items-center text-[12px] font-medium text-brand-gray tracking-wide">
-                                        <span>{{ formatDate(expense.payment_date) }}</span>
-                                        <span class="mx-2 w-1 h-1 rounded-full bg-brand-gray/30"></span>
-                                        <span>{{ expense.category_name || '未分类' }}</span>
-                                    </div>
-                                </div>
-                                <div class="text-right ml-3 flex flex-col items-end">
-                                    <p class="font-sans font-bold text-brand-dark text-[18px] tracking-tight">-{{ formatAmount(expense.amount) }}</p>
-                                    <span v-if="expense.status === 'planned'" class="mt-1 text-[9px] font-bold px-2 py-0.5 rounded-full bg-brand-gold/10 text-brand-gold uppercase tracking-wider">计划</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- EXPENSE DETAIL VIEW -->
-                <div v-else-if="currentView === 'expense-detail'" class="absolute inset-0 overflow-y-auto bg-brand-light pb-32 pt-16 page-content">
-                    <div v-if="currentExpense" class="p-6">
-                        <!-- Modern Receipt Card -->
-                        <div class="bg-white rounded-[32px] p-8 shadow-[0_20px_40px_rgb(0,0,0,0.06)] border border-black/[0.03] mb-6 relative overflow-hidden">
-                            <!-- Decorative Circle -->
-                            <div class="absolute -right-12 -top-12 w-32 h-32 rounded-full opacity-10 blur-2xl" :class="getCategoryBgClass(currentExpense.category_name)"></div>
-                            
-                            <div class="flex flex-col items-center mb-10 relative z-10">
-                                <div class="w-16 h-16 rounded-2xl flex items-center justify-center mb-6 shadow-sm" :class="getCategoryColorClass(currentExpense.category_name)">
-                                    <i :data-lucide="getCategoryIcon(currentExpense.category_name)" class="w-7 h-7"></i>
-                                </div>
-                                <h2 class="text-xl font-semibold text-brand-dark text-center mb-2">{{ currentExpense.title }}</h2>
-                                <p class="text-5xl font-sans font-bold text-brand-dark tracking-tighter my-2">-{{ formatAmount(currentExpense.amount) }}</p>
-                                <span class="mt-4 text-[10px] font-bold uppercase tracking-widest px-4 py-1.5 rounded-full" 
-                                      :class="currentExpense.status === 'paid' ? 'bg-black/5 text-brand-dark' : 'bg-brand-gold/10 text-brand-gold'">
-                                    {{ currentExpense.status === 'paid' ? '已结清' : '计划开支' }}
-                                </span>
-                            </div>
-
-                            <!-- Minimal Divider -->
-                            <div class="w-full border-t border-dashed border-black/10 my-6"></div>
-
-                            <!-- Details Grid -->
-                            <div class="space-y-5">
-                                <div class="flex justify-between items-center">
-                                    <span class="text-[13px] font-medium text-brand-gray">项目分类</span>
-                                    <span class="text-[15px] font-semibold text-brand-dark">{{ currentExpense.category_name || '-' }}</span>
-                                </div>
-                                <div class="flex justify-between items-center">
-                                    <span class="text-[13px] font-medium text-brand-gray">交易日期</span>
-                                    <span class="text-[15px] font-semibold text-brand-dark font-sans">{{ formatDate(currentExpense.payment_date) }}</span>
-                                </div>
-                                <div class="flex justify-between items-center">
-                                    <span class="text-[13px] font-medium text-brand-gray">支付方式</span>
-                                    <span class="text-[15px] font-semibold text-brand-dark">{{ getPaymentMethodText(currentExpense.payment_method) }}</span>
-                                </div>
-                                <div v-if="currentExpense.payer_names" class="flex justify-between items-center">
-                                    <span class="text-[13px] font-medium text-brand-gray">支付人</span>
-                                    <span class="text-[15px] font-semibold text-brand-dark">{{ currentExpense.payer_names }}</span>
-                                </div>
-                                <div v-if="currentExpense.vendor_name" class="flex justify-between items-center">
-                                    <span class="text-[13px] font-medium text-brand-gray">供应商/收款方</span>
-                                    <span class="text-[15px] font-semibold text-brand-dark">{{ currentExpense.vendor_name }}</span>
-                                </div>
-                                
-                                <div v-if="currentExpense.notes" class="pt-4">
-                                    <span class="block text-[13px] font-medium text-brand-gray mb-3">补充说明</span>
-                                    <p class="text-[14px] text-brand-dark leading-relaxed bg-brand-light p-4 rounded-2xl">{{ currentExpense.notes }}</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Premium Action Buttons -->
-                        <div class="flex space-x-4">
-                            <button @click="navigate('expense-form', { mode: 'edit', id: currentExpense.id })" class="flex-1 bg-brand-dark text-white py-4 rounded-[20px] font-semibold text-[15px] active:scale-[0.96] transition-transform shadow-[0_8px_20px_rgb(0,0,0,0.2)]">
-                                编辑账单
-                            </button>
-                            <button @click="deleteExpense" class="w-16 flex-shrink-0 bg-white text-[#ff3b30] border border-black/5 flex items-center justify-center rounded-[20px] active:scale-[0.96] transition-transform shadow-sm">
-                                <i data-lucide="trash-2" class="w-5 h-5"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- EXPENSE FORM VIEW -->
-                <div v-else-if="currentView === 'expense-form'" class="absolute inset-0 overflow-y-auto bg-white pb-32 pt-16 page-content">
-                    <div class="p-6">
-                        <form @submit.prevent="saveExpense" class="space-y-8">
-                            <!-- Amount Input (Editorial Typography) -->
-                            <div class="text-center pt-4 pb-8 border-b border-black/5">
-                                <label class="block text-[10px] font-bold text-brand-gray uppercase tracking-widest mb-4">输入金额</label>
-                                <div class="flex items-center justify-center text-brand-dark">
-                                    <span class="text-3xl font-sans mr-2 font-bold">¥</span>
-                                    <input 
-                                        type="number" 
-                                        step="0.01" 
-                                        v-model="formData.amount" 
-                                        required
-                                        class="w-[60%] text-center text-5xl md:text-6xl font-sans font-bold bg-transparent outline-none placeholder-black/10 caret-brand-dark"
-                                        placeholder="0.00"
-                                    >
-                                </div>
-                            </div>
-
-                            <!-- Modern Form Fields -->
-                            <div class="space-y-6">
-                                <!-- Title -->
-                                <div>
-                                    <label class="block text-[11px] font-bold text-brand-gray uppercase tracking-widest mb-3 ml-1">账单标题</label>
-                                    <input 
-                                        type="text" 
-                                        v-model="formData.title" 
-                                        required
-                                        class="w-full bg-brand-light text-brand-dark text-[15px] font-medium px-5 py-4 rounded-2xl outline-none focus:ring-2 focus:ring-black/5 transition-all placeholder-brand-gray/50"
-                                        placeholder="例如：购买客厅沙发"
-                                    >
-                                </div>
-                                
-                                <div class="grid grid-cols-2 gap-4">
-                                    <!-- Category -->
-                                    <div>
-                                        <label class="block text-[11px] font-bold text-brand-gray uppercase tracking-widest mb-3 ml-1">所属分类</label>
-                                        <div class="relative">
-                                            <select v-model="formData.category_id" required class="w-full bg-brand-light text-brand-dark text-[15px] font-medium pl-5 pr-10 py-4 rounded-2xl outline-none appearance-none focus:ring-2 focus:ring-black/5 transition-all">
-                                                <option value="" disabled selected>选择分类</option>
-                                                <option v-for="cat in categories" :key="cat.id" :value="cat.id">
-                                                    {{ cat.level > 1 ? '└ ' + cat.name : cat.name }}
-                                                </option>
-                                            </select>
-                                            <i data-lucide="chevron-down" class="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-gray pointer-events-none"></i>
-                                        </div>
-                                    </div>
-
-                                    <!-- Date -->
-                                    <div>
-                                        <label class="block text-[11px] font-bold text-brand-gray uppercase tracking-widest mb-3 ml-1">发生日期</label>
-                                        <input 
-                                            type="date" 
-                                            v-model="formData.payment_date" 
-                                            required
-                                            class="w-full bg-brand-light text-brand-dark text-[15px] font-medium px-5 py-4 rounded-2xl outline-none focus:ring-2 focus:ring-black/5 transition-all"
-                                        >
-                                    </div>
-                                </div>
-
-                                <!-- Payment Method (Chips) -->
-                                <div>
-                                    <label class="block text-[11px] font-bold text-brand-gray uppercase tracking-widest mb-3 ml-1">支付方式</label>
-                                    <div class="flex flex-wrap gap-2">
-                                        <div 
-                                            v-for="method in paymentMethods" 
-                                            :key="method.value"
-                                            @click="formData.payment_method = method.value"
-                                            class="px-5 py-3 rounded-2xl text-[13px] font-semibold transition-all cursor-pointer border border-transparent"
-                                            :class="formData.payment_method === method.value ? 'bg-brand-dark text-white shadow-md' : 'bg-brand-light text-brand-gray hover:bg-black/5'"
-                                        >
-                                            {{ method.label }}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                
-                                <!-- Payer Names -->
-                                <div>
-                                    <label class="block text-[11px] font-bold text-brand-gray uppercase tracking-widest mb-3 ml-1">支付人</label>
-                                    <input 
-                                        type="text" 
-                                        v-model="formData.payer_names" 
-                                        class="w-full bg-brand-light text-brand-dark text-[15px] font-medium px-5 py-4 rounded-2xl outline-none focus:ring-2 focus:ring-black/5 transition-all placeholder-brand-gray/50"
-                                        placeholder="例如：张三, 李四"
-                                    >
-                                </div>
-
-                                <!-- Status -->
-                                <div class="bg-brand-light rounded-2xl p-1 flex relative">
-                                    <div class="absolute inset-y-1 w-[calc(50%-4px)] bg-white rounded-xl shadow-sm transition-transform duration-300 ease-out"
-                                         :class="formData.status === 'paid' ? 'translate-x-0' : 'translate-x-[calc(100%+4px)]'"></div>
-                                    <label class="flex-1 relative z-10 flex items-center justify-center py-3 cursor-pointer">
-                                        <input type="radio" v-model="formData.status" value="paid" class="sr-only">
-                                        <span class="text-[13px] font-semibold transition-colors duration-300" :class="formData.status === 'paid' ? 'text-brand-dark' : 'text-brand-gray'">已结清</span>
-                                    </label>
-                                    <label class="flex-1 relative z-10 flex items-center justify-center py-3 cursor-pointer">
-                                        <input type="radio" v-model="formData.status" value="planned" class="sr-only">
-                                        <span class="text-[13px] font-semibold transition-colors duration-300" :class="formData.status === 'planned' ? 'text-brand-dark' : 'text-brand-gray'">计划开支</span>
-                                    </label>
-                                </div>
-
-                                <!-- Notes -->
-                                <div>
-                                    <label class="block text-[11px] font-bold text-brand-gray uppercase tracking-widest mb-3 ml-1">补充说明</label>
-                                    <textarea 
-                                        v-model="formData.notes" 
-                                        rows="3"
-                                        class="w-full bg-brand-light text-brand-dark text-[15px] p-5 rounded-2xl outline-none focus:ring-2 focus:ring-black/5 transition-all placeholder-brand-gray/50 resize-none"
-                                        placeholder="填写商品链接、尺寸要求或其他细节..."
-                                    ></textarea>
-                                </div>
-                            </div>
-
-                            <!-- Fixed Bottom Button -->
-                            <div class="fixed bottom-0 left-0 w-full p-6 bg-gradient-to-t from-white via-white to-transparent pb-safe">
-                                <button type="submit" class="w-full bg-brand-dark text-white py-4 rounded-[20px] font-semibold text-[16px] active:scale-[0.98] transition-transform shadow-[0_10px_30px_rgb(0,0,0,0.2)] flex items-center justify-center">
-                                    <i v-if="saving" data-lucide="loader-2" class="w-5 h-5 mr-2 animate-spin"></i>
-                                    {{ saving ? '处理中...' : '确认保存' }}
-                                </button>
-                            </div>
-                            <!-- Spacer for fixed button -->
-                            <div class="h-24"></div>
-                        </form>
-                    </div>
-                </div>
-
-                <!-- CONCEPTS LIST VIEW -->
-                <div v-else-if="currentView === 'concepts'" class="absolute inset-0 flex flex-col bg-brand-light page-content pt-16">
-                    <div class="px-6 py-8 relative z-10">
-                        <p class="text-[11px] font-bold text-brand-gray uppercase tracking-widest mb-2 ml-1">灵感库</p>
-                        <div class="flex items-baseline space-x-1">
-                            <span class="text-4xl font-sans font-bold text-brand-dark tracking-tight">装修参考</span>
-                        </div>
-                    </div>
-                    
-                    <div class="flex-1 overflow-y-auto pb-32 px-5 scroll-smooth">
-                        <div v-if="loading" class="flex justify-center items-center py-20">
-                            <div class="w-8 h-8 border-2 border-brand-dark border-t-transparent rounded-full animate-spin"></div>
-                        </div>
-                        <div v-else-if="concepts.length === 0" class="flex flex-col items-center justify-center py-32 opacity-40">
-                            <i data-lucide="image" class="w-16 h-16 text-brand-gray mb-6"></i>
-                            <p class="text-sm font-medium tracking-wide">暂无灵感，快去收集吧</p>
-                        </div>
-                        <div v-else class="grid grid-cols-2 gap-4">
-                            <div v-for="concept in concepts" :key="concept.id" @click="navigate('concept-detail', { id: concept.id })" class="bg-white rounded-[20px] overflow-hidden shadow-[0_8px_20px_rgb(0,0,0,0.03)] active:scale-95 transition-all duration-300 cursor-pointer flex flex-col">
-                                <div class="w-full h-40 bg-brand-light relative">
-                                    <img v-if="getConceptCover(concept)" :src="getConceptCover(concept)" class="w-full h-full object-cover" />
-                                    <div v-else class="w-full h-full flex items-center justify-center text-brand-gray/30">
-                                        <i data-lucide="image" class="w-10 h-10"></i>
-                                    </div>
-                                    <div class="absolute top-2 right-2 bg-black/40 backdrop-blur-md px-2 py-1 rounded-full text-[10px] text-white font-medium">
-                                        {{ getSourceText(concept.source_type) }}
-                                    </div>
-                                </div>
-                                <div class="p-3">
-                                    <h4 class="font-semibold text-brand-dark text-[14px] leading-tight line-clamp-2 mb-1">{{ concept.title }}</h4>
-                                    <p class="text-[11px] text-brand-gray line-clamp-1">{{ concept.style || '未分类' }}</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- CONCEPT DETAIL VIEW -->
-                <div v-else-if="currentView === 'concept-detail'" class="absolute inset-0 overflow-y-auto bg-brand-light pb-32 pt-16 page-content">
-                    <div v-if="currentConcept" class="p-6">
-                        <div class="bg-white rounded-[32px] p-6 shadow-[0_20px_40px_rgb(0,0,0,0.06)] border border-black/[0.03] mb-6">
-                            <div class="flex items-center space-x-2 mb-4">
-                                <span class="bg-brand-dark text-white text-[10px] font-bold px-3 py-1 rounded-full">{{ getSourceText(currentConcept.source_type) }}</span>
-                                <span class="bg-brand-light text-brand-gray text-[10px] font-bold px-3 py-1 rounded-full">{{ currentConcept.style || '常规' }}</span>
-                            </div>
-                            
-                            <h2 class="text-2xl font-bold text-brand-dark mb-4 leading-tight">{{ currentConcept.title }}</h2>
-                            
-                            <div v-if="currentConceptImages.length > 0" class="space-y-3 mb-6">
-                                <img v-for="(img, idx) in currentConceptImages" :key="idx" :src="img" class="w-full rounded-2xl shadow-sm object-cover" />
-                            </div>
-                            <div v-else class="w-full h-32 bg-brand-light rounded-2xl flex items-center justify-center text-brand-gray/30 mb-6">
-                                <i data-lucide="image-off" class="w-8 h-8"></i>
-                            </div>
-
-                            <div v-if="currentConcept.description" class="pt-4 border-t border-black/5">
-                                <p class="text-[14px] text-brand-dark leading-relaxed whitespace-pre-wrap">{{ currentConcept.description }}</p>
-                            </div>
-                            
-                            <div v-if="currentConcept.reference_link" class="mt-4">
-                                <a :href="currentConcept.reference_link" target="_blank" class="text-[13px] text-brand-accent font-medium flex items-center">
-                                    <i data-lucide="external-link" class="w-4 h-4 mr-1"></i> 查看原链接
-                                </a>
-                            </div>
-                        </div>
-
-                        <div class="flex space-x-4">
-                            <button @click="navigate('concept-form', { mode: 'edit', id: currentConcept.id })" class="flex-1 bg-brand-dark text-white py-4 rounded-[20px] font-semibold text-[15px] active:scale-[0.96] transition-transform shadow-[0_8px_20px_rgb(0,0,0,0.2)]">
-                                编辑参考
-                            </button>
-                            <button @click="deleteConcept" class="w-16 flex-shrink-0 bg-white text-[#ff3b30] border border-black/5 flex items-center justify-center rounded-[20px] active:scale-[0.96] transition-transform shadow-sm">
-                                <i data-lucide="trash-2" class="w-5 h-5"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- CONCEPT FORM VIEW -->
-                <div v-else-if="currentView === 'concept-form'" class="absolute inset-0 overflow-y-auto bg-white pb-32 pt-16 page-content">
-                    <div class="p-6">
-                        <form @submit.prevent="saveConcept" class="space-y-6">
-                            <div class="space-y-6">
-                                <div>
-                                    <label class="block text-[11px] font-bold text-brand-gray uppercase tracking-widest mb-3 ml-1">标题</label>
-                                    <input type="text" v-model="conceptForm.title" required class="w-full bg-brand-light text-brand-dark text-[15px] font-medium px-5 py-4 rounded-2xl outline-none focus:ring-2 focus:ring-black/5 transition-all" placeholder="例如：极简原木风客厅">
-                                </div>
-
-                                <div>
-                                    <label class="block text-[11px] font-bold text-brand-gray uppercase tracking-widest mb-3 ml-1">来源</label>
-                                    <div class="flex flex-wrap gap-2">
-                                        <div v-for="src in sourceOptions" :key="src.value" @click="conceptForm.source_type = src.value" class="px-5 py-3 rounded-2xl text-[13px] font-semibold transition-all cursor-pointer border border-transparent" :class="conceptForm.source_type === src.value ? 'bg-brand-dark text-white shadow-md' : 'bg-brand-light text-brand-gray hover:bg-black/5'">
-                                            {{ src.label }}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label class="block text-[11px] font-bold text-brand-gray uppercase tracking-widest mb-3 ml-1">图片 (最多5张)</label>
-                                    <div class="grid grid-cols-3 gap-3">
-                                        <div v-for="(img, idx) in conceptImagesPreview" :key="idx" class="aspect-square rounded-xl bg-brand-light relative overflow-hidden group">
-                                            <img :src="img" class="w-full h-full object-cover" />
-                                            <button type="button" @click.prevent="removeConceptImage(idx)" class="absolute top-1 right-1 w-6 h-6 bg-black/50 rounded-full flex items-center justify-center text-white backdrop-blur-md active:scale-90">
-                                                <i data-lucide="x" class="w-3 h-3"></i>
-                                            </button>
-                                        </div>
-                                        <label v-if="conceptImagesPreview.length < 5" class="aspect-square rounded-xl border-2 border-dashed border-brand-gray/30 flex flex-col items-center justify-center text-brand-gray cursor-pointer hover:bg-brand-light transition-colors active:scale-95">
-                                            <i data-lucide="camera" class="w-6 h-6 mb-1 opacity-50"></i>
-                                            <span class="text-[10px] font-medium opacity-60">添加图片</span>
-                                            <input type="file" multiple accept="image/*" @change="handleConceptImageUpload" class="hidden" :disabled="uploadingImages">
-                                        </label>
-                                    </div>
-                                    <p v-if="uploadingImages" class="text-xs text-brand-accent mt-2 animate-pulse flex items-center"><i data-lucide="loader-2" class="w-3 h-3 mr-1 animate-spin"></i> 上传中...</p>
-                                </div>
-
-                                <div>
-                                    <label class="block text-[11px] font-bold text-brand-gray uppercase tracking-widest mb-3 ml-1">风格 (选填)</label>
-                                    <input type="text" v-model="conceptForm.style" class="w-full bg-brand-light text-brand-dark text-[15px] font-medium px-5 py-4 rounded-2xl outline-none focus:ring-2 focus:ring-black/5 transition-all" placeholder="如：极简、奶油风、工业风">
-                                </div>
-                                
-                                <div>
-                                    <label class="block text-[11px] font-bold text-brand-gray uppercase tracking-widest mb-3 ml-1">链接 (选填)</label>
-                                    <input type="url" v-model="conceptForm.reference_link" class="w-full bg-brand-light text-brand-dark text-[15px] font-medium px-5 py-4 rounded-2xl outline-none focus:ring-2 focus:ring-black/5 transition-all" placeholder="https://...">
-                                </div>
-
-                                <div>
-                                    <label class="block text-[11px] font-bold text-brand-gray uppercase tracking-widest mb-3 ml-1">描述 (选填)</label>
-                                    <textarea v-model="conceptForm.description" rows="4" class="w-full bg-brand-light text-brand-dark text-[15px] p-5 rounded-2xl outline-none focus:ring-2 focus:ring-black/5 transition-all resize-none" placeholder="记录一些设计灵感和心得..."></textarea>
-                                </div>
-                            </div>
-
-                            <div class="fixed bottom-0 left-0 w-full p-6 bg-gradient-to-t from-white via-white to-transparent pb-safe z-10">
-                                <button type="submit" class="w-full bg-brand-dark text-white py-4 rounded-[20px] font-semibold text-[16px] active:scale-[0.98] transition-transform shadow-[0_10px_30px_rgb(0,0,0,0.2)] flex items-center justify-center">
-                                    <i v-if="saving" data-lucide="loader-2" class="w-5 h-5 mr-2 animate-spin"></i>
-                                    {{ saving ? '处理中...' : '保存参考' }}
-                                </button>
-                            </div>
-                            <div class="h-24"></div>
-                        </form>
-                    </div>
-                </div>
+            <transition :name="state.transitionName">
+                <component :is="currentViewComponent"></component>
             </transition>
         </main>
 
         <!-- Minimal FAB Action Menu -->
-        <div v-show="['home', 'expenses', 'concepts'].includes(currentView)" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex flex-col items-center justify-end pointer-events-none w-full h-full">
+        <div v-show="state.currentView === 'home'" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 w-14 h-14 pointer-events-none">
             
-            <!-- Backdrop -->
+            <!-- Backdrop (Invisible, just for clicking outside) -->
             <transition name="fade">
-                <div v-if="fabOpen" @click="fabOpen = false" class="fixed inset-0 bg-black/10 backdrop-blur-sm pointer-events-auto transition-opacity duration-300 z-30"></div>
+                <div v-if="state.fabOpen" @click="state.fabOpen = false" class="fixed inset-0 bg-transparent pointer-events-auto z-30"></div>
             </transition>
 
             <!-- Menu Items -->
-            <div class="relative z-40 flex flex-col items-center justify-end pb-20 pointer-events-none">
+            <div class="absolute inset-0 z-40 pointer-events-none">
                 <transition name="slide-up-fade">
-                    <div v-if="fabOpen" class="flex flex-col items-center space-y-4 mb-4 pointer-events-auto origin-bottom">
+                    <div v-if="state.fabOpen" class="absolute -top-[64px] -left-[56px] pointer-events-auto">
                         <!-- Add Concept -->
-                        <button @click="navigate('concept-form', { mode: 'add' })" class="flex items-center justify-center bg-white px-6 py-3.5 rounded-full shadow-[0_10px_40px_rgb(0,0,0,0.12)] border border-black/5 active:scale-95 transition-all duration-300 transform hover:-translate-y-1 group w-40">
-                            <i data-lucide="image" class="w-5 h-5 text-brand-gold mr-2"></i>
-                            <span class="text-[15px] font-semibold text-brand-dark">添加灵感</span>
+                        <button @click="actions.navigate('concept-form', { mode: 'add' }); state.fabOpen = false" class="flex items-center justify-center bg-white w-[56px] h-[56px] rounded-full shadow-[0_10px_40px_rgb(0,0,0,0.12)] border border-black/5 active:scale-95 transition-all duration-300 hover:-translate-y-1 hover:bg-black hover:text-white text-brand-dark group">
+                            <span class="text-[14px] font-bold group-hover:text-white">灵感</span>
                         </button>
-                        
+                    </div>
+                </transition>
+                
+                <transition name="slide-up-fade">
+                    <div v-if="state.fabOpen" class="absolute -top-[64px] -right-[56px] pointer-events-auto" style="transition-delay: 50ms;">
                         <!-- Add Expense -->
-                        <button @click="navigate('expense-form', { mode: 'add' })" class="flex items-center justify-center bg-white px-6 py-3.5 rounded-full shadow-[0_10px_40px_rgb(0,0,0,0.12)] border border-black/5 active:scale-95 transition-all duration-300 transform hover:-translate-y-1 group w-40">
-                            <i data-lucide="receipt" class="w-5 h-5 text-brand-accent mr-2"></i>
-                            <span class="text-[15px] font-semibold text-brand-dark">添加账单</span>
+                        <button @click="actions.navigate('expense-form', { mode: 'add' }); state.fabOpen = false" class="flex items-center justify-center bg-white w-[56px] h-[56px] rounded-full shadow-[0_10px_40px_rgb(0,0,0,0.12)] border border-black/5 active:scale-95 transition-all duration-300 hover:-translate-y-1 hover:bg-black hover:text-white text-brand-dark group">
+                            <span class="text-[14px] font-bold group-hover:text-white">记账</span>
                         </button>
                     </div>
                 </transition>
             </div>
 
             <!-- Main FAB Button -->
-            <button @click="fabOpen = !fabOpen" class="absolute bottom-6 left-1/2 -translate-x-1/2 w-14 h-14 rounded-full flex items-center justify-center shadow-[0_10px_30px_rgb(0,0,0,0.15)] active:scale-90 transition-all duration-300 pointer-events-auto z-50" :class="fabOpen ? 'bg-white rotate-[135deg]' : 'bg-brand-dark'">
-                <i data-lucide="plus" class="w-6 h-6 transition-colors duration-300" :class="fabOpen ? 'text-brand-dark' : 'text-white'"></i>
+            <button @click="state.fabOpen = !state.fabOpen" class="absolute inset-0 w-14 h-14 rounded-full flex items-center justify-center shadow-[0_10px_30px_rgb(0,0,0,0.15)] active:scale-90 transition-all duration-300 pointer-events-auto z-50" :class="state.fabOpen ? 'bg-white text-brand-dark rotate-[135deg]' : 'bg-brand-dark text-white'">
+                <i data-lucide="plus" class="w-6 h-6"></i>
             </button>
         </div>
     </div>
-
-    <script src="/app/js/app.js"></script>
 </body>
 </html>
