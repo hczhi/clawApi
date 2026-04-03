@@ -9,9 +9,7 @@
 
         <div class="px-6 py-8 relative z-10">
             <p class="text-[10px] font-bold text-black/30 uppercase tracking-widest mb-2 ml-1">INSPIRATION</p>
-            <div class="flex items-baseline space-x-1">
-                <span class="text-4xl font-black tracking-tighter">灵感收集</span>
-            </div>
+            
         </div>
         
         <div class="flex-1 overflow-y-auto pb-32 px-5 scroll-smooth relative z-10">
@@ -29,7 +27,7 @@
                     @click="actions.navigate('concept-detail', { id: concept.id })" 
                     class="group relative bg-black rounded-[2rem] overflow-hidden shadow-[0_15px_35px_rgba(0,0,0,0.05)] active:scale-95 transition-all duration-500 cursor-pointer"
                     :class="[index % 2 === 0 ? 'aspect-[4/5]' : 'aspect-[3/4]', index % 2 !== 0 ? 'mt-6' : '']"
-                    style="animation: fade-in-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;"
+                    style="animation: fade-in-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) both; overflow: hidden; border-radius: 20px;"
                     :style="{ animationDelay: `${index * 50}ms` }">
                     
                     <!-- Cover Image -->
