@@ -7,7 +7,7 @@
                 <span class="w-6 h-[1.5px] bg-current transition-all group-hover:w-8"></span>
                 <span class="w-4 h-[1.5px] bg-current transition-all group-hover:w-6"></span>
             </button> -->
-            <div class="text-[10px] font-bold tracking-[0.2em] uppercase">{{ currentDate }}</div>
+            <div class="text-[10px] font-bold tracking-[0.2em] uppercase" style="color: #333;">{{ currentDate }}</div>
             <!-- <button class="w-10 h-10 flex justify-end items-center pointer-events-auto hover:scale-110 transition-transform">
                 <i data-lucide="bell" class="w-5 h-5"></i>
             </button> -->
