@@ -1,5 +1,5 @@
 <template>
-    <div class="concepts-container pb-safe">
+    <div class="concepts-container app-container page-content pb-safe">
         <!-- Huge Background Text -->
         <div class="massive-bg-wrapper">
             <span class="massive-text">
@@ -57,8 +57,6 @@ const { state, constants, computedProps, helpers, actions } = useAppStore();
 
 <style scoped lang="scss">
 .concepts-container {
-    @extend .app-container;
-    @extend .page-content;
     padding-top: 4rem;
 }
 
@@ -172,30 +170,57 @@ const { state, constants, computedProps, helpers, actions } = useAppStore();
 .concepts-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 1rem;
+    gap: 1.25rem;
+    
+    @media (min-width: 640px) {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 1.5rem;
+    }
+    
+    @media (min-width: 1024px) {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 2rem;
+    }
 }
 
 .concept-card {
     position: relative;
     background: $color-black;
-    border-radius: 2rem;
+    border-radius: 1.5rem;
     overflow: hidden;
     box-shadow: 0 15px 35px rgba(0,0,0,0.05);
     cursor: pointer;
-    transition: all 0.5s ease;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     animation: fade-in-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+    aspect-ratio: 3/4;
+
+    @media (min-width: 640px) {
+        border-radius: 2rem;
+    }
+
+    &:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 30px 60px rgba(0,0,0,0.12);
+        
+        .concept-cover {
+            transform: scale(1.05);
+            opacity: 1;
+        }
+        
+        .concept-overlay {
+            background: linear-gradient(to top, rgba($color-black, 0.95) 0%, rgba($color-black, 0.6) 50%, transparent 100%);
+        }
+    }
 
     &:active {
-        transform: scale(0.95);
+        transform: scale(0.96);
     }
 
-    &.even-item {
-        aspect-ratio: 4/5;
-    }
-
-    &.odd-item {
-        aspect-ratio: 3/4;
-        margin-top: 1.5rem;
+    /* Create staggered layout effect for mobile only */
+    @media (max-width: 639px) {
+        &.odd-item {
+            margin-top: 2rem;
+        }
     }
 }
 
@@ -216,13 +241,8 @@ const { state, constants, computedProps, helpers, actions } = useAppStore();
     width: 100%;
     height: 100%;
     object-fit: cover;
-    transition: transform 1.5s ease-out, opacity 1.5s ease-out;
-    opacity: 0.9;
-
-    .concept-card:hover & {
-        transform: scale(1.1);
-        opacity: 1;
-    }
+    transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.8s ease;
+    opacity: 0.85;
 }
 
 .concept-cover-placeholder {
@@ -237,68 +257,87 @@ const { state, constants, computedProps, helpers, actions } = useAppStore();
     color: rgba($color-white, 0.2);
 
     i {
-        width: 2.5rem;
-        height: 2.5rem;
+        width: 3rem;
+        height: 3rem;
+        opacity: 0.5;
+        transition: all 0.5s ease;
+    }
+    
+    .concept-card:hover & i {
+        opacity: 1;
+        transform: scale(1.1);
+        color: rgba($color-white, 0.4);
     }
 }
 
 .source-tag {
     position: absolute;
-    top: 0.75rem;
-    right: 0.75rem;
-    background: rgba($color-white, 0.9);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    padding: 0.25rem 0.625rem;
+    top: 1rem;
+    right: 1rem;
+    background: rgba($color-white, 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    padding: 0.35rem 0.75rem;
     border-radius: 9999px;
-    font-size: 9px;
+    font-size: 10px;
     font-weight: 900;
     letter-spacing: 0.15em;
     text-transform: uppercase;
     color: $color-black;
-    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    z-index: 10;
+    
+    .concept-card:hover & {
+        background: $color-white;
+        transform: scale(1.05);
+    }
 }
 
 .concept-overlay {
     position: absolute;
     inset: auto 0 0 0;
-    padding: 1rem;
-    padding-top: 4rem;
-    background: linear-gradient(to top, rgba($color-black, 0.95), rgba($color-black, 0.5), transparent);
+    padding: 1.5rem 1.25rem 1.25rem;
+    background: linear-gradient(to top, rgba($color-black, 0.9) 0%, rgba($color-black, 0.4) 60%, transparent 100%);
+    transition: all 0.4s ease;
+    z-index: 10;
 }
 
 .concept-title {
-    font-weight: bold;
+    font-weight: 900;
     color: $color-white;
-    font-size: 14px;
-    line-height: 1.25;
-    margin-bottom: 0.25rem;
+    font-size: 1.125rem;
+    line-height: 1.3;
+    letter-spacing: -0.025em;
+    margin-bottom: 0.35rem;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
-    transition: transform 0.3s ease;
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    text-shadow: 0 2px 10px rgba(0,0,0,0.5);
 
     .concept-card:hover & {
-        transform: translateY(-0.25rem);
+        transform: translateY(-4px);
     }
 }
 
 .concept-style {
-    font-size: 9px;
+    font-size: 10px;
     font-weight: bold;
-    color: rgba($color-white, 0.6);
+    color: rgba($color-white, 0.7);
     text-transform: uppercase;
     letter-spacing: 0.15em;
     display: -webkit-box;
     -webkit-line-clamp: 1;
     -webkit-box-orient: vertical;
     overflow: hidden;
-    transition: transform 0.3s ease;
-    transition-delay: 75ms;
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    transition-delay: 50ms;
 
     .concept-card:hover & {
-        transform: translateY(-0.25rem);
+        transform: translateY(-4px);
+        color: rgba($color-white, 0.9);
     }
 }
 </style>

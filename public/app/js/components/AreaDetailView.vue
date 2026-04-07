@@ -260,7 +260,7 @@ onMounted(() => {
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.02);
     border-bottom: 1px solid rgba(0, 0, 0, 0.05);
     z-index: 20;
-
+    overflow: hidden;
     .massive-bg-text {
         position: absolute;
         right: -2rem;

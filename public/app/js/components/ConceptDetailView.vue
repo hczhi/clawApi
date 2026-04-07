@@ -1,5 +1,5 @@
 <template>
-    <div class="concept-detail-container pb-safe">
+    <div class="concept-detail-container app-container page-content pb-safe">
         <!-- Huge Background Text -->
         <div class="massive-bg-wrapper">
             <span class="massive-text">
@@ -72,8 +72,6 @@ const { state, constants, computedProps, helpers, actions } = useAppStore();
 
 <style scoped lang="scss">
 .concept-detail-container {
-    @extend .app-container;
-    @extend .page-content;
     padding-bottom: 8rem;
     overflow-y: auto;
     scroll-behavior: smooth;

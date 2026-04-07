@@ -1,5 +1,5 @@
 <template>
-    <div class="assistant-container pb-safe">
+    <div class="assistant-container app-container page-content pb-safe">
         <!-- Huge Background Text -->
         <div class="massive-bg-wrapper">
             <span class="massive-text">
@@ -170,8 +170,6 @@ onMounted(() => {
 
 <style scoped lang="scss">
 .assistant-container {
-    @extend .app-container;
-    @extend .page-content;
     padding-top: 4rem;
     display: flex;
     flex-direction: column;

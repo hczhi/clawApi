@@ -1,5 +1,5 @@
 <template>
-    <div class="concept-form-container pb-safe">
+    <div class="concept-form-container app-container page-content pb-safe">
         <div class="form-wrapper">
             <form @submit.prevent="actions.saveConcept" class="concept-form">
                 <div class="form-content">
@@ -78,8 +78,6 @@ const { state, constants, computedProps, helpers, actions } = useAppStore();
 
 <style scoped lang="scss">
 .concept-form-container {
-    @extend .app-container;
-    @extend .page-content;
     background-color: $color-white;
     padding-bottom: 8rem;
     padding-top: 4rem;
