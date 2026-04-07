@@ -7,7 +7,7 @@ const router = express.Router();
  */
 router.get('/', (req, res) => {
   try {
-    const { category_id, vendor_id, payment_method, status, tags, date_from, date_to, search, page = 1, limit = 20 } = req.query;
+    const { category_id, vendor_id, payment_method, status, tags, date_from, date_to, search, decoration_area, page = 1, limit = 20 } = req.query;
     
     let sql = `
       SELECT 
@@ -41,6 +41,10 @@ router.get('/', (req, res) => {
       sql += ' AND e.tags LIKE ?';
       params.push(`%${tags}%`);
     }
+    if (decoration_area) {
+      sql += ' AND e.decoration_area = ?';
+      params.push(decoration_area);
+    }
     if (date_from) {
       sql += ' AND e.payment_date >= ?';
       params.push(date_from);
@@ -69,6 +73,7 @@ router.get('/', (req, res) => {
     if (category_id) { countSql += ' AND category_id = ?'; countParams.push(category_id); }
     if (vendor_id) { countSql += ' AND vendor_id = ?'; countParams.push(vendor_id); }
     if (status) { countSql += ' AND status = ?'; countParams.push(status); }
+    if (decoration_area) { countSql += ' AND decoration_area = ?'; countParams.push(decoration_area); }
     if (date_from) { countSql += ' AND payment_date >= ?'; countParams.push(date_from); }
     if (date_to) { countSql += ' AND payment_date <= ?'; countParams.push(date_to); }
     if (search) { countSql += ' AND (title LIKE ? OR notes LIKE ?)'; countParams.push(`%${search}%`, `%${search}%`); }
@@ -115,7 +120,7 @@ router.get('/:id', (req, res) => {
  */
 router.post('/', (req, res) => {
   try {
-    const { category_id, quote_id, title, amount, payment_method, payer_names, payment_date, receipt_file_path, vendor_id, reimbursement_status, tags, notes } = req.body;
+    const { category_id, quote_id, title, amount, payment_method, payer_names, payment_date, receipt_file_path, vendor_id, reimbursement_status, tags, notes, decoration_area } = req.body;
     
     if (!category_id || !title || !amount || !payment_date) {
       return res.status(400).json({ success: false, error: '分类 ID、标题、金额、支付日期不能为空' });
@@ -133,9 +138,9 @@ router.post('/', (req, res) => {
     }
     
     const result = db.run(`
-      INSERT INTO expenses (category_id, quote_id, title, amount, payment_method, payer_names, payment_date, receipt_file_path, vendor_id, reimbursement_status, tags, notes)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `, [category_id, quote_id || null, title, amount, payment_method || 'cash', payer_names || null, payment_date, receipt_file_path || null, vendor_id || null, reimbursement_status || 'not_required', tags || null, notes || null]);
+      INSERT INTO expenses (category_id, quote_id, title, amount, payment_method, payer_names, payment_date, receipt_file_path, vendor_id, reimbursement_status, tags, notes, decoration_area)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [category_id, quote_id || null, title, amount, payment_method || 'cash', payer_names || null, payment_date, receipt_file_path || null, vendor_id || null, reimbursement_status || 'not_required', tags || null, notes || null, decoration_area || null]);
     
     const newExpense = db.get(`
       SELECT 
@@ -160,7 +165,7 @@ router.post('/', (req, res) => {
 router.put('/:id', (req, res) => {
   try {
     const { id } = req.params;
-    const { title, amount, payment_method, payment_date, status, notes, payer_names } = req.body;
+    const { title, amount, payment_method, payment_date, status, notes, payer_names, decoration_area } = req.body;
     
     const existing = db.get('SELECT * FROM expenses WHERE id = ?', [id]);
     if (!existing) {
@@ -176,9 +181,10 @@ router.put('/:id', (req, res) => {
           status = COALESCE(?, status),
           notes = COALESCE(?, notes),
           payer_names = COALESCE(?, payer_names),
+          decoration_area = COALESCE(?, decoration_area),
           updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
-    `, [title, amount, payment_method, payment_date, status, notes, payer_names, id]);
+    `, [title, amount, payment_method, payment_date, status, notes, payer_names, decoration_area, id]);
     
     const updated = db.get(`
       SELECT 

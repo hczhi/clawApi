@@ -1,80 +1,96 @@
 <template>
-    <div class="absolute inset-0 overflow-y-auto bg-[#FAFAFA] pb-32 pt-16 page-content">
+    <div class="app-container page-content expense-form-container pb-safe">
         <!-- Huge Background Text -->
-        <div class="absolute inset-0 flex items-center justify-center pointer-events-none select-none overflow-hidden z-0 fixed">
-            <span class="text-[28vh] font-black text-black/[0.02] tracking-tighter whitespace-nowrap rotate-[-90deg] md:rotate-0 origin-center select-none scale-[1.8] md:scale-100">
+        <div class="massive-bg-wrapper">
+            <span class="massive-text">
                 NEW REC.
             </span>
         </div>
 
-        <div class="p-6 relative z-10">
-            <form @submit.prevent="actions.saveExpense" class="space-y-8">
+        <div class="form-content animate-slide-up">
+            <form @submit.prevent="actions.saveExpense" class="expense-form">
                 <!-- Amount Input -->
-                <div class="text-center pt-4 pb-8 border-b border-black/5">
-                    <label class="block text-[10px] font-bold text-black/40 uppercase tracking-widest mb-4">输入金额</label>
-                    <div class="flex items-center justify-center text-[#111111]">
-                        <span class="text-3xl font-sans mr-2 font-bold">¥</span>
+                <div class="amount-section">
+                    <label class="section-label">输入金额</label>
+                    <div class="amount-input-wrapper">
+                        <span class="currency-symbol">¥</span>
                         <input 
                             type="number" 
                             step="0.01" 
                             v-model="state.formData.amount" 
                             required
-                            class="w-[60%] text-center text-5xl md:text-6xl font-sans font-black bg-transparent outline-none placeholder-black/10 caret-black"
+                            class="amount-input"
                             placeholder="0.00"
                         >
                     </div>
                 </div>
 
-                <div class="space-y-6">
+                <div class="form-fields">
                     <!-- Title -->
-                    <div>
-                        <label class="block text-[11px] font-bold text-black/40 uppercase tracking-widest mb-3 ml-1">账单标题</label>
+                    <div class="form-group">
+                        <label class="field-label">账单标题</label>
                         <input 
                             type="text" 
                             v-model="state.formData.title" 
                             required
-                            class="w-full bg-white/80 backdrop-blur-md text-[#111111] text-[15px] font-bold px-5 py-4 rounded-[2rem] outline-none focus:ring-2 focus:ring-black/5 transition-all placeholder-black/20 border border-black/5"
+                            class="form-input"
                             placeholder="例如：购买客厅沙发"
                         >
                     </div>
                     
-                    <div class="grid grid-cols-2 gap-4">
+                    <div class="form-row">
                         <!-- Category -->
-                        <div>
-                            <label class="block text-[11px] font-bold text-black/40 uppercase tracking-widest mb-3 ml-1">所属分类</label>
-                            <div class="relative">
-                                <select v-model="state.formData.category_id" required class="w-full bg-white/80 backdrop-blur-md text-[#111111] text-[15px] font-bold pl-5 pr-10 py-4 rounded-[2rem] outline-none appearance-none focus:ring-2 focus:ring-black/5 transition-all border border-black/5">
+                        <div class="form-group">
+                            <label class="field-label">所属分类</label>
+                            <div class="select-wrapper">
+                                <select v-model="state.formData.category_id" required class="form-select">
                                     <option value="" disabled selected>选择分类</option>
                                     <option v-for="cat in state.categories" :key="cat.id" :value="cat.id">
                                         {{ cat.level > 1 ? '└ ' + cat.name : cat.name }}
                                     </option>
                                 </select>
-                                <span class="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-bold text-black/30 pointer-events-none">▼</span>
+                                <span class="select-arrow">▼</span>
                             </div>
                         </div>
 
                         <!-- Date -->
-                        <div>
-                            <label class="block text-[11px] font-bold text-black/40 uppercase tracking-widest mb-3 ml-1">发生日期</label>
+                        <div class="form-group">
+                            <label class="field-label">发生日期</label>
                             <input 
                                 type="date" 
                                 v-model="state.formData.payment_date" 
                                 required
-                                class="w-full bg-white/80 backdrop-blur-md text-[#111111] text-[15px] font-bold px-5 py-4 rounded-[2rem] outline-none focus:ring-2 focus:ring-black/5 transition-all border border-black/5"
+                                class="form-input"
                             >
                         </div>
                     </div>
 
+                    <!-- Decoration Area -->
+                    <div class="form-group">
+                        <label class="field-label">装修区域</label>
+                        <div class="chip-group">
+                            <div 
+                                v-for="area in constants.decorationAreas" 
+                                :key="area.value"
+                                @click="state.formData.decoration_area = state.formData.decoration_area === area.value ? '' : area.value"
+                                class="chip"
+                                :class="{ 'active': state.formData.decoration_area === area.value }"
+                            >
+                                {{ area.label }}
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Payment Method -->
-                    <div>
-                        <label class="block text-[11px] font-bold text-black/40 uppercase tracking-widest mb-3 ml-1">支付方式</label>
-                        <div class="flex flex-wrap gap-2">
+                    <div class="form-group">
+                        <label class="field-label">支付方式</label>
+                        <div class="chip-group">
                             <div 
                                 v-for="method in constants.paymentMethods" 
                                 :key="method.value"
                                 @click="state.formData.payment_method = method.value"
-                                class="px-5 py-3 rounded-full text-[13px] font-bold transition-all cursor-pointer border border-transparent"
-                                :class="state.formData.payment_method === method.value ? 'bg-[#111111] text-white shadow-md' : 'bg-white/80 backdrop-blur-md text-black/60 hover:bg-white border border-black/5'"
+                                class="chip"
+                                :class="{ 'active': state.formData.payment_method === method.value }"
                             >
                                 {{ method.label }}
                             </div>
@@ -82,49 +98,51 @@
                     </div>
 
                     <!-- Payer Names -->
-                    <div>
-                        <label class="block text-[11px] font-bold text-black/40 uppercase tracking-widest mb-3 ml-1">支付人</label>
+                    <div class="form-group">
+                        <label class="field-label">支付人</label>
                         <input 
                             type="text" 
                             v-model="state.formData.payer_names" 
-                            class="w-full bg-white/80 backdrop-blur-md text-[#111111] text-[15px] font-bold px-5 py-4 rounded-[2rem] outline-none focus:ring-2 focus:ring-black/5 transition-all placeholder-black/20 border border-black/5"
+                            class="form-input"
                             placeholder="例如：张三, 李四"
                         >
                     </div>
 
                     <!-- Status -->
-                    <div class="bg-white/80 backdrop-blur-md rounded-full p-1 flex relative border border-black/5">
-                        <div class="absolute inset-y-1 w-[calc(50%-4px)] bg-black rounded-full shadow-sm transition-transform duration-300 ease-out"
-                                :class="state.formData.status === 'paid' ? 'translate-x-0' : 'translate-x-[calc(100%+4px)]'"></div>
-                        <label class="flex-1 relative z-10 flex items-center justify-center py-3 cursor-pointer">
-                            <input type="radio" v-model="state.formData.status" value="paid" class="sr-only">
-                            <span class="text-[13px] font-bold transition-colors duration-300" :class="state.formData.status === 'paid' ? 'text-white' : 'text-black/40'">已结清</span>
-                        </label>
-                        <label class="flex-1 relative z-10 flex items-center justify-center py-3 cursor-pointer">
-                            <input type="radio" v-model="state.formData.status" value="planned" class="sr-only">
-                            <span class="text-[13px] font-bold transition-colors duration-300" :class="state.formData.status === 'planned' ? 'text-white' : 'text-black/40'">计划开支</span>
-                        </label>
+                    <div class="form-group">
+                        <div class="status-toggle">
+                            <div class="toggle-slider"
+                                 :class="state.formData.status === 'paid' ? 'pos-left' : 'pos-right'"></div>
+                            <label class="toggle-option">
+                                <input type="radio" v-model="state.formData.status" value="paid" class="sr-only">
+                                <span class="toggle-text" :class="state.formData.status === 'paid' ? 'text-active' : 'text-inactive'">已结清</span>
+                            </label>
+                            <label class="toggle-option">
+                                <input type="radio" v-model="state.formData.status" value="planned" class="sr-only">
+                                <span class="toggle-text" :class="state.formData.status === 'planned' ? 'text-active' : 'text-inactive'">计划开支</span>
+                            </label>
+                        </div>
                     </div>
 
                     <!-- Notes -->
-                    <div>
-                        <label class="block text-[11px] font-bold text-black/40 uppercase tracking-widest mb-3 ml-1">补充说明</label>
+                    <div class="form-group">
+                        <label class="field-label">补充说明</label>
                         <textarea 
                             v-model="state.formData.notes" 
                             rows="3"
-                            class="w-full bg-white/80 backdrop-blur-md text-[#111111] text-[15px] font-bold p-5 rounded-[2rem] outline-none focus:ring-2 focus:ring-black/5 transition-all placeholder-black/20 border border-black/5 resize-none"
+                            class="form-textarea"
                             placeholder="填写商品链接、尺寸要求或其他细节..."
                         ></textarea>
                     </div>
                 </div>
 
-                <div class=" bottom-0 left-0 w-full p-6 bg-gradient-to-t from-[#FAFAFA] via-[#FAFAFA] to-transparent pb-safe">
-                    <button type="submit" class="w-full bg-[#111111] text-white py-4 rounded-full font-bold text-[16px] active:scale-[0.98] transition-transform shadow-[0_10px_30px_rgb(0,0,0,0.2)] flex items-center justify-center">
-                        <span v-if="state.saving" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></span>
+                <div class="form-actions">
+                    <button type="submit" class="btn-submit">
+                        <span v-if="state.saving" class="spinner"></span>
                         {{ state.saving ? '处理中...' : '确认保存' }}
                     </button>
                 </div>
-                <div class="h-24"></div>
+                <div class="spacer-bottom"></div>
             </form>
         </div>
     </div>
@@ -134,3 +152,309 @@
 import { useAppStore } from '../store.js';
 const { state, constants, computedProps, helpers, actions } = useAppStore();
 </script>
+
+<style scoped lang="scss">
+.expense-form-container {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    padding-top: 4rem;
+    overflow-y: auto;
+}
+
+.massive-bg-wrapper {
+    @include absolute-inset;
+    @include flex-center;
+    pointer-events: none;
+    user-select: none;
+    overflow: hidden;
+    z-index: 0;
+    position: fixed;
+
+    .massive-text {
+        font-size: 28vh;
+        font-weight: 900;
+        color: rgba(0, 0, 0, 0.02);
+        letter-spacing: -0.05em;
+        white-space: nowrap;
+        transform: rotate(-90deg) scale(1.8);
+        transform-origin: center;
+
+        @media (min-width: 768px) {
+            transform: rotate(0deg) scale(1);
+        }
+    }
+}
+
+.form-content {
+    padding: 1.5rem;
+    position: relative;
+    z-index: 10;
+    max-width: 600px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+.expense-form {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.amount-section {
+    text-align: center;
+    padding: 1rem 0 2rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+
+    .section-label {
+        display: block;
+        font-size: 10px;
+        font-weight: 700;
+        color: rgba(0, 0, 0, 0.4);
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        margin-bottom: 1rem;
+    }
+
+    .amount-input-wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: $color-black;
+
+        .currency-symbol {
+            font-size: 1.875rem; line-height: 2.25rem;
+            font-family: $font-sans;
+            font-weight: 700;
+            margin-right: 0.5rem;
+        }
+
+        .amount-input {
+            width: 60%;
+            text-align: center;
+            font-size: 3rem; line-height: 1;
+            font-family: $font-sans;
+            font-weight: 900;
+            background: transparent;
+            outline: none;
+            caret-color: $color-black;
+
+            &::placeholder {
+                color: rgba(0, 0, 0, 0.1);
+            }
+
+            @media (min-width: 768px) {
+                font-size: 3.75rem; line-height: 1;
+            }
+        }
+    }
+}
+
+.form-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+
+    .field-label {
+        display: block;
+        font-size: 11px;
+        font-weight: 700;
+        color: rgba(0, 0, 0, 0.4);
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        margin-bottom: 0.75rem;
+        margin-left: 0.25rem;
+    }
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+// Common Input Styles
+.form-input, .form-select, .form-textarea {
+    width: 100%;
+    @include glassmorphism(rgba(255, 255, 255, 0.8), 12px);
+    color: $color-black;
+    font-size: 15px;
+    font-weight: 700;
+    padding: 1rem 1.25rem;
+    border-radius: 2rem;
+    outline: none;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+
+    &:focus {
+        box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.05);
+    }
+
+    &::placeholder {
+        color: rgba(0, 0, 0, 0.2);
+    }
+}
+
+.form-textarea {
+    resize: none;
+}
+
+.select-wrapper {
+    position: relative;
+
+    .form-select {
+        padding-right: 2.5rem;
+        appearance: none;
+    }
+
+    .select-arrow {
+        position: absolute;
+        right: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 10px;
+        font-weight: 700;
+        color: rgba(0, 0, 0, 0.3);
+        pointer-events: none;
+    }
+}
+
+.chip-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+
+    .chip {
+        padding: 0.75rem 1.25rem;
+        border-radius: 9999px;
+        font-size: 13px;
+        font-weight: 700;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        border: 1px solid transparent;
+
+        @include glassmorphism(rgba(255, 255, 255, 0.8), 12px);
+        color: rgba(0, 0, 0, 0.6);
+        border-color: rgba(0, 0, 0, 0.05);
+
+        &:hover {
+            background-color: $color-pure-white;
+        }
+
+        &.active {
+            background-color: $color-black;
+            color: $color-white;
+            @include shadow-soft;
+            border-color: transparent;
+        }
+    }
+}
+
+.status-toggle {
+    @include glassmorphism(rgba(255, 255, 255, 0.8), 12px);
+    border-radius: 9999px;
+    padding: 0.25rem;
+    display: flex;
+    position: relative;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+
+    .toggle-slider {
+        position: absolute;
+        top: 0.25rem;
+        bottom: 0.25rem;
+        width: calc(50% - 0.25rem);
+        background-color: $color-black;
+        border-radius: 9999px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+        &.pos-left {
+            transform: translateX(0);
+        }
+        &.pos-right {
+            transform: translateX(calc(100% + 0.5rem));
+        }
+    }
+
+    .toggle-option {
+        flex: 1;
+        position: relative;
+        z-index: 10;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.75rem 0;
+        cursor: pointer;
+
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            border: 0;
+        }
+
+        .toggle-text {
+            font-size: 13px;
+            font-weight: 700;
+            transition: color 0.3s ease;
+
+            &.text-active {
+                color: $color-white;
+            }
+            &.text-inactive {
+                color: rgba(0, 0, 0, 0.4);
+            }
+        }
+    }
+}
+
+.form-actions {
+    position: sticky;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    padding: 1.5rem 0;
+    background: linear-gradient(to top, $color-white 50%, rgba(250, 250, 250, 0));
+    z-index: 20;
+
+    .btn-submit {
+        width: 100%;
+        background-color: $color-black;
+        color: $color-white;
+        padding: 1rem 0;
+        border-radius: 9999px;
+        font-weight: 700;
+        font-size: 16px;
+        transition: all 0.3s ease;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        @include flex-center;
+
+        &:active {
+            transform: scale(0.98);
+        }
+
+        .spinner {
+            width: 1rem;
+            height: 1rem;
+            border: 2px solid $color-white;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 0.5rem;
+        }
+    }
+}
+
+.spacer-bottom {
+    height: 6rem;
+}
+</style>

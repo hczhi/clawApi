@@ -43,6 +43,7 @@ const app = createApp({
                 { key: 'amount', label: '金额', type: 'amount' },
                 { key: 'payment_method', label: '支付方式' },
                 { key: 'payment_date', label: '支付日期', type: 'date' },
+                { key: 'decoration_area', label: '装修区域' },
                 { key: 'status', label: '状态', type: 'status' },
             ],
             'vendors': [
@@ -57,6 +58,7 @@ const app = createApp({
                 { key: 'style', label: '风格' },
                 { key: 'category', label: '分类' },
                 { key: 'source_type', label: '来源' },
+                { key: 'decoration_area', label: '装修区域' },
                 { key: 'priority', label: '优先级', type: 'status' },
             ],
             'purchase-plans': [
@@ -132,6 +134,14 @@ const app = createApp({
                     { label: '已支付', value: 'paid' },
                     { label: '已退款', value: 'refunded' }
                 ]},
+                { key: 'decoration_area', label: '装修区域', type: 'select', options: [
+                    { label: '客厅', value: '客厅' },
+                    { label: '卧室', value: '卧室' },
+                    { label: '卫浴', value: '卫浴' },
+                    { label: '厨房', value: '厨房' },
+                    { label: '阳台', value: '阳台' },
+                    { label: '过道', value: '过道' }
+                ]},
                 { key: 'notes', label: '备注', type: 'textarea', fullWidth: true },
             ],
             'vendors': [
@@ -164,7 +174,18 @@ const app = createApp({
                     { label: '好好住', value: 'haozhu' },
                     { label: 'Instagram', value: 'instagram' },
                     { label: 'Pinterest', value: 'pinterest' },
+                    { label: '淘宝', value: 'taobao' },
+                    { label: '京东', value: 'jingdong' },
+                    { label: '抖音', value: 'douyin' },
                     { label: '其他', value: 'other' }
+                ]},
+                { key: 'decoration_area', label: '装修区域', type: 'select', options: [
+                    { label: '客厅', value: '客厅' },
+                    { label: '卧室', value: '卧室' },
+                    { label: '卫浴', value: '卫浴' },
+                    { label: '厨房', value: '厨房' },
+                    { label: '阳台', value: '阳台' },
+                    { label: '过道', value: '过道' }
                 ]},
                 { key: 'priority', label: '优先级', type: 'select', options: [
                     { label: '高', value: 'high' },
@@ -178,6 +199,17 @@ const app = createApp({
                 { key: 'category_id', label: '分类ID', type: 'number' },
                 { key: 'estimated_budget', label: '预算', type: 'number' },
                 { key: 'actual_price', label: '实际价格', type: 'number' },
+                { key: 'vendor_id', label: '供应商ID', type: 'number' },
+                { key: 'estimated_purchase_date', label: '预计购买', type: 'date' },
+                { key: 'purchased_date', label: '实际购买', type: 'date' },
+                { key: 'decoration_area', label: '装修区域', type: 'select', options: [
+                    { label: '客厅', value: '客厅' },
+                    { label: '卧室', value: '卧室' },
+                    { label: '卫浴', value: '卫浴' },
+                    { label: '厨房', value: '厨房' },
+                    { label: '阳台', value: '阳台' },
+                    { label: '过道', value: '过道' }
+                ]},
                 { key: 'status', label: '状态', type: 'select', options: [
                     { label: '待购', value: 'todo' },
                     { label: '购买中', value: 'in_progress' },

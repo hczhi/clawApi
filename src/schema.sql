@@ -58,7 +58,9 @@ CREATE TABLE IF NOT EXISTS quotes (
     validity_end DATE,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    tags TEXT,
     notes TEXT,
+    decoration_area TEXT CHECK(decoration_area IN ('客厅', '卧室', '卫浴', '厨房', '阳台', '过道')),
     FOREIGN KEY(vendor_id) REFERENCES vendors(id),
     FOREIGN KEY(category_id) REFERENCES expense_categories(id),
     FOREIGN KEY(design_concept_id) REFERENCES design_concepts(id)
@@ -211,6 +213,17 @@ CREATE TABLE IF NOT EXISTS renovation_results (
     tags TEXT,
     notes TEXT,
     FOREIGN KEY(task_id) REFERENCES renovation_timeline(id)
+);
+
+-- 11. 户型图画布数据表
+CREATE TABLE IF NOT EXISTS floor_plans (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    grid_data TEXT,
+    bg_image_url TEXT,
+    bg_config TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 -- -----------------------------

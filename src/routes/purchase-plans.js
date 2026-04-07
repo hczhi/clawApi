@@ -113,7 +113,7 @@ router.get('/:id', (req, res) => {
  */
 router.post('/', (req, res) => {
   try {
-    const { item_name, category_id, estimated_budget, actual_price, estimated_purchase_date, purchased_date, installation_required, scheduled_installation_date, vendor_id, tags, notes } = req.body;
+    const { item_name, category_id, estimated_budget, actual_price, estimated_purchase_date, purchased_date, installation_required, scheduled_installation_date, vendor_id, tags, notes, decoration_area } = req.body;
     
     if (!item_name || !category_id) {
       return res.status(400).json({ success: false, error: '物品名称和分类 ID 不能为空' });
@@ -121,9 +121,9 @@ router.post('/', (req, res) => {
     
     const result = db.run(`
       INSERT INTO purchase_plans 
-      (item_name, category_id, estimated_budget, actual_price, estimated_purchase_date, purchased_date, installation_required, scheduled_installation_date, vendor_id, tags, notes)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `, [item_name, category_id, estimated_budget || null, actual_price || null, estimated_purchase_date || null, purchased_date || null, installation_required || 0, scheduled_installation_date || null, vendor_id || null, tags || null, notes || null]);
+      (item_name, category_id, estimated_budget, actual_price, estimated_purchase_date, purchased_date, installation_required, scheduled_installation_date, vendor_id, tags, notes, decoration_area)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [item_name, category_id, estimated_budget || null, actual_price || null, estimated_purchase_date || null, purchased_date || null, installation_required || 0, scheduled_installation_date || null, vendor_id || null, tags || null, notes || null, decoration_area || null]);
     
     const newPlan = db.get(`
       SELECT 
@@ -148,7 +148,7 @@ router.post('/', (req, res) => {
 router.put('/:id', (req, res) => {
   try {
     const { id } = req.params;
-    const { item_name, estimated_budget, actual_price, estimated_purchase_date, purchased_date, installation_required, scheduled_installation_date, vendor_id, tags, notes } = req.body;
+    const { item_name, estimated_budget, actual_price, estimated_purchase_date, purchased_date, installation_required, scheduled_installation_date, vendor_id, tags, notes, decoration_area } = req.body;
     
     const existing = db.get('SELECT * FROM purchase_plans WHERE id = ?', [id]);
     if (!existing) {
@@ -167,9 +167,10 @@ router.put('/:id', (req, res) => {
           vendor_id = COALESCE(?, vendor_id),
           tags = COALESCE(?, tags),
           notes = COALESCE(?, notes),
+          decoration_area = COALESCE(?, decoration_area),
           updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
-    `, [item_name, estimated_budget, actual_price, estimated_purchase_date, purchased_date, installation_required, scheduled_installation_date, vendor_id, tags, notes, id]);
+    `, [item_name, estimated_budget, actual_price, estimated_purchase_date, purchased_date, installation_required, scheduled_installation_date, vendor_id, tags, notes, decoration_area, id]);
     
     const updated = db.get(`
       SELECT 

@@ -1,58 +1,61 @@
 <template>
-    <div class="absolute inset-0 flex flex-col bg-[#FAFAFA] text-[#111111] page-content pt-16">
+    <div class="app-container page-content expenses-container">
         <!-- Huge Background Text -->
-        <div class="absolute inset-0 flex items-center justify-center pointer-events-none select-none overflow-hidden z-0">
-            <span class="text-[28vh] font-black text-black/[0.02] tracking-tighter whitespace-nowrap rotate-[-90deg] md:rotate-0 origin-center select-none scale-[1.8] md:scale-100">
+        <div class="massive-bg-wrapper">
+            <span class="massive-text">
                 EXPENSES
             </span>
         </div>
         
         <!-- Premium Header Area -->
-        <div class="px-6 py-8 relative z-10">
-            <p class="text-[10px] font-bold text-black/30 uppercase tracking-widest mb-2 ml-1">累计投入</p>
-            <div class="flex items-baseline space-x-1">
-                <span class="text-4xl md:text-5xl font-black tracking-tighter">¥{{ helpers.formatAmount(state.totalExpenses) }}</span>
+        <div class="expenses-header animate-fade-in-up">
+            <p class="header-subtitle">累计投入</p>
+            <div class="header-amount">
+                <span class="amount-value">¥{{ helpers.formatAmount(state.totalExpenses) }}</span>
             </div>
         </div>
         
         <!-- Elegant List -->
-        <div class="flex-1 overflow-y-auto pb-32 px-5 scroll-smooth relative z-10">
-            <div v-if="state.loading" class="flex justify-center items-center py-20">
-                <div class="w-8 h-8 border-2 border-[#111111] border-t-transparent rounded-full animate-spin"></div>
+        <div class="expenses-list-container hide-scrollbar animate-slide-up" style="animation-delay: 0.1s;">
+            <div v-if="state.loading" class="loading-state">
+                <div class="spinner"></div>
             </div>
-            <div v-else-if="state.expenses.length === 0" class="flex flex-col items-center justify-center py-32 opacity-40">
-                <div class="text-[40px] font-black tracking-tighter text-black/20 mb-4">EMPTY</div>
-                <p class="text-[10px] font-bold uppercase tracking-widest">空空如也，开始记录第一笔开销吧</p>
+            <div v-else-if="state.expenses.length === 0" class="empty-state">
+                <div class="empty-text">EMPTY</div>
+                <p class="empty-subtext">空空如也，开始记录第一笔开销吧</p>
             </div>
-            <div v-else class="relative ml-2 mt-4">
+            <div v-else class="timeline-container">
                 <!-- Continuous Timeline Line -->
-                <div class="absolute left-[3px] top-2 bottom-4 w-[2px] bg-gradient-to-b from-black/10 via-black/5 to-transparent rounded-full"></div>
+                <div class="timeline-line"></div>
                 
-                <div class="space-y-8">
-                    <div v-for="group in groupedExpenses" :key="group.date" class="relative">
+                <div class="timeline-groups">
+                    <div v-for="group in groupedExpenses" :key="group.date" class="timeline-group">
                         <!-- Timeline Node & Date -->
-                        <div class="flex items-center mb-4 relative z-10">
-                            <div class="absolute left-0 w-2 h-2 rounded-full bg-[#111111] ring-[6px] ring-[#FAFAFA]"></div>
-                            <h3 class="pl-8 text-[12px] font-black tracking-widest uppercase text-black/40">{{ group.date }}</h3>
+                        <div class="timeline-node-wrapper">
+                            <div class="timeline-dot"></div>
+                            <h3 class="timeline-date">{{ group.date }}</h3>
                         </div>
                         
                         <!-- Cards in Group -->
-                        <div class="space-y-3 pl-8">
-                            <div v-for="expense in group.items" :key="expense.id" @click="actions.navigate('expense-detail', { id: expense.id })" class="group bg-white/80 backdrop-blur-md rounded-[2rem] p-4 flex items-center shadow-[0_8px_30px_rgb(0,0,0,0.03)] border border-black/5 hover:bg-white active:scale-95 transition-all duration-300 cursor-pointer relative overflow-hidden">
-                                <div class="w-14 h-14 rounded-2xl flex items-center justify-center mr-4 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3" :class="helpers.getCategoryColorClass(expense.category_name)">
-                                    <span class="text-[10px] font-black uppercase tracking-widest opacity-70 group-hover:opacity-100">{{ expense.category_name ? expense.category_name.substring(0,2) : '未' }}</span>
+                        <div class="timeline-cards">
+                            <div v-for="(expense, index) in group.items" :key="expense.id" 
+                                 @click="actions.navigate('expense-detail', { id: expense.id })" 
+                                 class="expense-card group animate-fade-in-up"
+                                 :style="{ animationDelay: `${index * 0.05}s` }">
+                                <div class="card-icon" :class="helpers.getCategoryColorClass(expense.category_name)">
+                                    <span class="icon-text">{{ expense.category_name ? expense.category_name.substring(0,2) : '未' }}</span>
                                 </div>
-                                <div class="flex-1 min-w-0 z-10">
-                                    <h4 class="font-bold text-[15px] truncate mb-1.5 group-hover:translate-x-1 transition-transform duration-300">{{ expense.title }}</h4>
-                                    <div class="flex items-center text-[10px] font-bold text-black/40 uppercase tracking-wider">
+                                <div class="card-content">
+                                    <h4 class="card-title">{{ expense.title }}</h4>
+                                    <div class="card-meta">
                                         <span>{{ expense.category_name || '未分类' }}</span>
-                                        <span class="mx-2 w-1 h-1 rounded-full bg-black/20"></span>
+                                        <span class="meta-dot"></span>
                                         <span>{{ helpers.getPaymentMethodText(expense.payment_method) || '未知' }}</span>
                                     </div>
                                 </div>
-                                <div class="text-right ml-3 flex flex-col items-end z-10">
-                                    <p class="font-black text-[16px] tracking-tight">-{{ helpers.formatAmount(expense.amount) }}</p>
-                                    <span v-if="expense.status === 'planned'" class="mt-1 text-[9px] font-bold px-2 py-0.5 rounded-full bg-[#d4af37]/10 text-[#d4af37] uppercase tracking-wider">计划</span>
+                                <div class="card-right">
+                                    <p class="card-amount">-{{ helpers.formatAmount(expense.amount) }}</p>
+                                    <span v-if="expense.status === 'planned'" class="status-badge">计划</span>
                                 </div>
                             </div>
                         </div>
@@ -84,3 +87,285 @@ const groupedExpenses = computed(() => {
     return groups;
 });
 </script>
+
+<style scoped lang="scss">
+.expenses-container {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    padding-top: 4rem;
+}
+
+.massive-bg-wrapper {
+    @include absolute-inset;
+    @include flex-center;
+    pointer-events: none;
+    user-select: none;
+    overflow: hidden;
+    z-index: 0;
+
+    .massive-text {
+        font-size: 28vh;
+        font-weight: 900;
+        color: rgba(0, 0, 0, 0.02);
+        letter-spacing: -0.05em;
+        white-space: nowrap;
+        transform: rotate(-90deg) scale(1.8);
+        transform-origin: center;
+
+        @media (min-width: 768px) {
+            transform: rotate(0deg) scale(1);
+        }
+    }
+}
+
+.expenses-header {
+    padding: 2rem 1.5rem;
+    position: relative;
+    z-index: 10;
+
+    .header-subtitle {
+        font-size: 10px;
+        font-weight: 700;
+        color: rgba(0, 0, 0, 0.3);
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        margin-bottom: 0.5rem;
+        margin-left: 0.25rem;
+    }
+
+    .header-amount {
+        display: flex;
+        align-items: baseline;
+        gap: 0.25rem;
+
+        .amount-value {
+            font-size: 2.25rem; line-height: 2.5rem;
+            font-weight: 900;
+            letter-spacing: -0.05em;
+
+            @media (min-width: 768px) {
+                font-size: 3rem; line-height: 1;
+            }
+        }
+    }
+}
+
+.expenses-list-container {
+    flex: 1;
+    overflow-y: auto;
+    padding-bottom: 8rem;
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
+    scroll-behavior: smooth;
+    position: relative;
+    z-index: 10;
+}
+
+.loading-state {
+    @include flex-center;
+    padding: 5rem 0;
+
+    .spinner {
+        width: 2rem;
+        height: 2rem;
+        border: 2px solid $color-black;
+        border-top-color: transparent;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+}
+
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 8rem 0;
+    opacity: 0.4;
+
+    .empty-text {
+        font-size: 40px;
+        font-weight: 900;
+        letter-spacing: -0.05em;
+        color: rgba(0, 0, 0, 0.2);
+        margin-bottom: 1rem;
+    }
+
+    .empty-subtext {
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+    }
+}
+
+.timeline-container {
+    position: relative;
+    margin-left: 0.5rem;
+    margin-top: 1rem;
+
+    .timeline-line {
+        position: absolute;
+        left: 3px;
+        top: 0.5rem;
+        bottom: 1rem;
+        width: 2px;
+        background: linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(0,0,0,0.05), transparent);
+        border-radius: 9999px;
+    }
+
+    .timeline-groups {
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+    }
+
+    .timeline-group {
+        position: relative;
+    }
+
+    .timeline-node-wrapper {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1rem;
+        position: relative;
+        z-index: 10;
+
+        .timeline-dot {
+            position: absolute;
+            left: 0;
+            width: 0.5rem;
+            height: 0.5rem;
+            border-radius: 50%;
+            background-color: $color-black;
+            box-shadow: 0 0 0 6px $color-white;
+        }
+
+        .timeline-date {
+            padding-left: 2rem;
+            font-size: 12px;
+            font-weight: 900;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: rgba(0, 0, 0, 0.4);
+        }
+    }
+
+    .timeline-cards {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        padding-left: 2rem;
+    }
+
+    .expense-card {
+        @include glassmorphism(rgba(255, 255, 255, 0.8), 12px);
+        border-radius: 2rem;
+        padding: 1rem;
+        display: flex;
+        align-items: center;
+        @include shadow-soft;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+
+        &:hover {
+            background-color: $color-pure-white;
+        }
+        &:active {
+            transform: scale(0.95);
+        }
+
+        .card-icon {
+            width: 3.5rem;
+            height: 3.5rem;
+            border-radius: 1rem;
+            @include flex-center;
+            margin-right: 1rem;
+            transition: transform 0.5s ease;
+
+            .icon-text {
+                font-size: 10px;
+                font-weight: 900;
+                text-transform: uppercase;
+                letter-spacing: 0.1em;
+                opacity: 0.7;
+                transition: opacity 0.3s ease;
+            }
+        }
+
+        &:hover .card-icon {
+            transform: scale(1.1) rotate(3deg);
+            .icon-text {
+                opacity: 1;
+            }
+        }
+
+        .card-content {
+            flex: 1;
+            min-width: 0;
+            z-index: 10;
+
+            .card-title {
+                font-weight: 700;
+                font-size: 15px;
+                overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+                margin-bottom: 0.375rem;
+                transition: transform 0.3s ease;
+            }
+
+            .card-meta {
+                display: flex;
+                align-items: center;
+                font-size: 10px;
+                font-weight: 700;
+                color: rgba(0, 0, 0, 0.4);
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+
+                .meta-dot {
+                    margin: 0 0.5rem;
+                    width: 0.25rem;
+                    height: 0.25rem;
+                    border-radius: 50%;
+                    background-color: rgba(0, 0, 0, 0.2);
+                }
+            }
+        }
+
+        &:hover .card-title {
+            transform: translateX(4px);
+        }
+
+        .card-right {
+            text-align: right;
+            margin-left: 0.75rem;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            z-index: 10;
+
+            .card-amount {
+                font-weight: 900;
+                font-size: 16px;
+                letter-spacing: -0.025em;
+            }
+
+            .status-badge {
+                margin-top: 0.25rem;
+                font-size: 9px;
+                font-weight: 700;
+                padding: 0.125rem 0.5rem;
+                border-radius: 9999px;
+                background-color: rgba($color-brand-gold, 0.1);
+                color: $color-brand-gold;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+            }
+        }
+    }
+}
+</style>

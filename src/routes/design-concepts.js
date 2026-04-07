@@ -46,7 +46,7 @@ router.post('/upload', upload.array('images', 5), (req, res) => {
  */
 router.get('/', (req, res) => {
   try {
-    const { style, category, source_type, priority, search, page = 1, limit = 20 } = req.query;
+    const { style, category, source_type, priority, search, decoration_area, page = 1, limit = 20 } = req.query;
     
     let sql = 'SELECT * FROM design_concepts WHERE 1=1';
     const params = [];
@@ -66,6 +66,10 @@ router.get('/', (req, res) => {
     if (priority) {
       sql += ' AND priority = ?';
       params.push(priority);
+    }
+    if (decoration_area) {
+      sql += ' AND decoration_area = ?';
+      params.push(decoration_area);
     }
     if (search) {
       sql += ' AND (title LIKE ? OR description LIKE ? OR notes LIKE ?)';
@@ -88,6 +92,7 @@ router.get('/', (req, res) => {
     if (category) { countSql += ' AND category = ?'; countParams.push(category); }
     if (source_type) { countSql += ' AND source_type = ?'; countParams.push(source_type); }
     if (priority) { countSql += ' AND priority = ?'; countParams.push(priority); }
+    if (decoration_area) { countSql += ' AND decoration_area = ?'; countParams.push(decoration_area); }
     if (search) { countSql += ' AND (title LIKE ? OR description LIKE ?)'; countParams.push(`%${search}%`, `%${search}%`); }
     
     const countResult = db.get(countSql, countParams);
@@ -121,7 +126,7 @@ router.get('/:id', (req, res) => {
  */
 router.post('/', (req, res) => {
   try {
-    const { title, description, style, category, source_type, image_urls, reference_link, budget_min, budget_max, priority, matched_spaces, tags, notes } = req.body;
+    const { title, description, style, category, source_type, image_urls, reference_link, budget_min, budget_max, priority, matched_spaces, tags, notes, decoration_area } = req.body;
     
     if (!title) {
       return res.status(400).json({ success: false, error: '方案标题不能为空' });
@@ -129,9 +134,9 @@ router.post('/', (req, res) => {
     
     const result = db.run(`
       INSERT INTO design_concepts 
-      (title, description, style, category, source_type, image_urls, reference_link, budget_min, budget_max, priority, matched_spaces, tags, notes)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `, [title, description || null, style || null, category || null, source_type || null, image_urls || null, reference_link || null, budget_min || null, budget_max || null, priority || 'medium', matched_spaces || null, tags || null, notes || null]);
+      (title, description, style, category, source_type, image_urls, reference_link, budget_min, budget_max, priority, matched_spaces, tags, notes, decoration_area)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [title, description || null, style || null, category || null, source_type || null, image_urls || null, reference_link || null, budget_min || null, budget_max || null, priority || 'medium', matched_spaces || null, tags || null, notes || null, decoration_area || null]);
     
     const newDesign = db.get('SELECT * FROM design_concepts WHERE id = ?', [result.lastInsertRowid]);
     
@@ -147,7 +152,7 @@ router.post('/', (req, res) => {
 router.put('/:id', (req, res) => {
   try {
     const { id } = req.params;
-    const { title, description, style, category, source_type, image_urls, reference_link, budget_min, budget_max, priority, matched_spaces, tags, notes } = req.body;
+    const { title, description, style, category, source_type, image_urls, reference_link, budget_min, budget_max, priority, matched_spaces, tags, notes, decoration_area } = req.body;
     
     const existing = db.get('SELECT * FROM design_concepts WHERE id = ?', [id]);
     if (!existing) {
@@ -169,9 +174,10 @@ router.put('/:id', (req, res) => {
           matched_spaces = COALESCE(?, matched_spaces),
           tags = COALESCE(?, tags),
           notes = COALESCE(?, notes),
+          decoration_area = COALESCE(?, decoration_area),
           updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
-    `, [title, description, style, category, source_type, image_urls, reference_link, budget_min, budget_max, priority, matched_spaces, tags, notes, id]);
+    `, [title, description, style, category, source_type, image_urls, reference_link, budget_min, budget_max, priority, matched_spaces, tags, notes, decoration_area, id]);
     
     const updated = db.get('SELECT * FROM design_concepts WHERE id = ?', [id]);
     res.json({ success: true, data: updated, message: '设计方案更新成功' });

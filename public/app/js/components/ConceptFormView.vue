@@ -1,63 +1,71 @@
 <template>
-    <div class="absolute inset-0 overflow-y-auto bg-white pb-32 pt-16 page-content">
-        <div class="p-6">
-            <form @submit.prevent="actions.saveConcept" class="space-y-6">
-                <div class="space-y-6">
-                    <div>
-                        <label class="block text-[11px] font-bold text-brand-gray uppercase tracking-widest mb-3 ml-1">标题</label>
-                        <input type="text" v-model="state.conceptForm.title" required class="w-full bg-brand-light text-brand-dark text-[15px] font-medium px-5 py-4 rounded-2xl outline-none focus:ring-2 focus:ring-black/5 transition-all" placeholder="例如：极简原木风客厅">
+    <div class="concept-form-container pb-safe">
+        <div class="form-wrapper">
+            <form @submit.prevent="actions.saveConcept" class="concept-form">
+                <div class="form-content">
+                    <div class="form-group">
+                        <label class="form-label">标题</label>
+                        <input type="text" v-model="state.conceptForm.title" required class="form-input" placeholder="例如：极简原木风客厅">
                     </div>
 
-                    <div>
-                        <label class="block text-[11px] font-bold text-brand-gray uppercase tracking-widest mb-3 ml-1">来源</label>
-                        <div class="flex flex-wrap gap-2">
-                            <div v-for="src in constants.sourceOptions" :key="src.value" @click="state.conceptForm.source_type = src.value" class="px-5 py-3 rounded-2xl text-[13px] font-semibold transition-all cursor-pointer border border-transparent" :class="state.conceptForm.source_type === src.value ? 'bg-brand-dark text-white shadow-md' : 'bg-brand-light text-brand-gray hover:bg-black/5'">
+                    <div class="form-group">
+                        <label class="form-label">来源</label>
+                        <div class="options-group">
+                            <div v-for="src in constants.sourceOptions" :key="src.value" @click="state.conceptForm.source_type = src.value" class="option-btn" :class="state.conceptForm.source_type === src.value ? 'is-active' : 'is-inactive'">
                                 {{ src.label }}
                             </div>
                         </div>
                     </div>
 
-                    <div>
-                        <label class="block text-[11px] font-bold text-brand-gray uppercase tracking-widest mb-3 ml-1">图片 (最多5张)</label>
-                        <div class="grid grid-cols-3 gap-3">
-                            <div v-for="(img, idx) in state.conceptImagesPreview" :key="idx" class="aspect-square rounded-xl bg-brand-light relative overflow-hidden group">
-                                <img :src="img" class="w-full h-full object-cover" />
-                                <button type="button" @click.prevent="actions.removeConceptImage(idx)" class="absolute top-1 right-1 w-6 h-6 bg-black/50 rounded-full flex items-center justify-center text-white backdrop-blur-md active:scale-90">
-                                    <i data-lucide="x" class="w-3 h-3"></i>
+                    <div class="form-group">
+                        <label class="form-label">装修区域</label>
+                        <div class="options-group">
+                            <div v-for="area in constants.decorationAreas" :key="area.value" @click="state.conceptForm.decoration_area = state.conceptForm.decoration_area === area.value ? '' : area.value" class="option-btn" :class="state.conceptForm.decoration_area === area.value ? 'is-active' : 'is-inactive'">
+                                {{ area.label }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">图片 (最多5张)</label>
+                        <div class="images-grid">
+                            <div v-for="(img, idx) in state.conceptImagesPreview" :key="idx" class="image-preview">
+                                <img :src="img" />
+                                <button type="button" @click.prevent="actions.removeConceptImage(idx)" class="remove-img-btn">
+                                    <i data-lucide="x"></i>
                                 </button>
                             </div>
-                            <label v-if="state.conceptImagesPreview.length < 5" class="aspect-square rounded-xl border-2 border-dashed border-brand-gray/30 flex flex-col items-center justify-center text-brand-gray cursor-pointer hover:bg-brand-light transition-colors active:scale-95">
-                                <i data-lucide="camera" class="w-6 h-6 mb-1 opacity-50"></i>
-                                <span class="text-[10px] font-medium opacity-60">添加图片</span>
-                                <input type="file" multiple accept="image/*" @change="actions.handleConceptImageUpload" class="hidden" :disabled="state.uploadingImages">
+                            <label v-if="state.conceptImagesPreview.length < 5" class="add-img-btn">
+                                <i data-lucide="camera"></i>
+                                <span>添加图片</span>
+                                <input type="file" multiple accept="image/*" @change="actions.handleConceptImageUpload" class="hidden-input" :disabled="state.uploadingImages">
                             </label>
                         </div>
-                        <p v-if="state.uploadingImages" class="text-xs text-brand-accent mt-2 animate-pulse flex items-center"><i data-lucide="loader-2" class="w-3 h-3 mr-1 animate-spin"></i> 上传中...</p>
+                        <p v-if="state.uploadingImages" class="uploading-text"><i data-lucide="loader-2"></i> 上传中...</p>
                     </div>
 
-                    <div>
-                        <label class="block text-[11px] font-bold text-brand-gray uppercase tracking-widest mb-3 ml-1">风格 (选填)</label>
-                        <input type="text" v-model="state.conceptForm.style" class="w-full bg-brand-light text-brand-dark text-[15px] font-medium px-5 py-4 rounded-2xl outline-none focus:ring-2 focus:ring-black/5 transition-all" placeholder="如：极简、奶油风、工业风">
+                    <div class="form-group">
+                        <label class="form-label">风格 (选填)</label>
+                        <input type="text" v-model="state.conceptForm.style" class="form-input" placeholder="如：极简、奶油风、工业风">
                     </div>
                     
-                    <div>
-                        <label class="block text-[11px] font-bold text-brand-gray uppercase tracking-widest mb-3 ml-1">链接 (选填)</label>
-                        <input type="url" v-model="state.conceptForm.reference_link" class="w-full bg-brand-light text-brand-dark text-[15px] font-medium px-5 py-4 rounded-2xl outline-none focus:ring-2 focus:ring-black/5 transition-all" placeholder="https://...">
+                    <div class="form-group">
+                        <label class="form-label">链接 (选填)</label>
+                        <input type="url" v-model="state.conceptForm.reference_link" class="form-input" placeholder="https://...">
                     </div>
 
-                    <div>
-                        <label class="block text-[11px] font-bold text-brand-gray uppercase tracking-widest mb-3 ml-1">描述 (选填)</label>
-                        <textarea v-model="state.conceptForm.description" rows="4" class="w-full bg-brand-light text-brand-dark text-[15px] p-5 rounded-2xl outline-none focus:ring-2 focus:ring-black/5 transition-all resize-none" placeholder="记录一些设计灵感和心得..."></textarea>
+                    <div class="form-group">
+                        <label class="form-label">描述 (选填)</label>
+                        <textarea v-model="state.conceptForm.description" rows="4" class="form-textarea" placeholder="记录一些设计灵感和心得..."></textarea>
                     </div>
                 </div>
 
-                <div class="bottom-0 left-0 w-full p-6 bg-gradient-to-t from-white via-white to-transparent pb-safe z-10">
-                    <button type="submit" class="w-full bg-brand-dark text-white py-4 rounded-[20px] font-semibold text-[16px] active:scale-[0.98] transition-transform shadow-[0_10px_30px_rgb(0,0,0,0.2)] flex items-center justify-center">
-                        <i v-if="state.saving" data-lucide="loader-2" class="w-5 h-5 mr-2 animate-spin"></i>
+                <div class="submit-section pb-safe">
+                    <button type="submit" class="submit-btn">
+                        <i v-if="state.saving" data-lucide="loader-2"></i>
                         {{ state.saving ? '处理中...' : '保存' }}
                     </button>
                 </div>
-                <div class="h-24"></div>
             </form>
         </div>
     </div>
@@ -67,3 +75,246 @@
 import { useAppStore } from '../store.js';
 const { state, constants, computedProps, helpers, actions } = useAppStore();
 </script>
+
+<style scoped lang="scss">
+.concept-form-container {
+    @extend .app-container;
+    @extend .page-content;
+    background-color: $color-white;
+    padding-bottom: 8rem;
+    padding-top: 4rem;
+    overflow-y: auto;
+}
+
+.form-wrapper {
+    padding: 1.5rem;
+}
+
+.form-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-label {
+    display: block;
+    font-size: 11px;
+    font-weight: bold;
+    color: rgba($color-black, 0.4);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 0.75rem;
+    margin-left: 0.25rem;
+}
+
+.form-input {
+    width: 100%;
+    background: rgba($color-black, 0.05);
+    color: $color-black;
+    font-size: 15px;
+    font-weight: 500;
+    padding: 1rem 1.25rem;
+    border-radius: 1rem;
+    outline: none;
+    border: 2px solid transparent;
+    transition: all 0.3s ease;
+
+    &:focus {
+        border-color: rgba($color-black, 0.1);
+        background: rgba($color-black, 0.02);
+    }
+
+    &::placeholder {
+        color: rgba($color-black, 0.3);
+    }
+}
+
+.form-textarea {
+    @extend .form-input;
+    resize: none;
+}
+
+.options-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.option-btn {
+    padding: 0.75rem 1.25rem;
+    border-radius: 1rem;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    border: 1px solid transparent;
+
+    &.is-active {
+        background: $color-black;
+        color: $color-white;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+
+    &.is-inactive {
+        background: rgba($color-black, 0.05);
+        color: rgba($color-black, 0.6);
+
+        &:hover {
+            background: rgba($color-black, 0.08);
+        }
+    }
+}
+
+.images-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.75rem;
+}
+
+.image-preview {
+    aspect-ratio: 1 / 1;
+    border-radius: 0.75rem;
+    background: rgba($color-black, 0.05);
+    position: relative;
+    overflow: hidden;
+    
+    img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+}
+
+.remove-img-btn {
+    position: absolute;
+    top: 0.25rem;
+    right: 0.25rem;
+    width: 1.5rem;
+    height: 1.5rem;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: $color-white;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: none;
+    transition: transform 0.2s ease;
+
+    &:active {
+        transform: scale(0.9);
+    }
+
+    i {
+        width: 0.75rem;
+        height: 0.75rem;
+    }
+}
+
+.add-img-btn {
+    aspect-ratio: 1 / 1;
+    border-radius: 0.75rem;
+    border: 2px dashed rgba($color-black, 0.15);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: rgba($color-black, 0.4);
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+        background: rgba($color-black, 0.02);
+        border-color: rgba($color-black, 0.25);
+    }
+
+    &:active {
+        transform: scale(0.95);
+    }
+
+    i {
+        width: 1.5rem;
+        height: 1.5rem;
+        margin-bottom: 0.25rem;
+        opacity: 0.5;
+    }
+
+    span {
+        font-size: 10px;
+        font-weight: 500;
+        opacity: 0.6;
+    }
+}
+
+.hidden-input {
+    display: none;
+}
+
+.uploading-text {
+    font-size: 0.75rem;
+    color: $color-black;
+    margin-top: 0.5rem;
+    display: flex;
+    align-items: center;
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+
+    i {
+        width: 0.75rem;
+        height: 0.75rem;
+        margin-right: 0.25rem;
+        animation: spin 1s linear infinite;
+    }
+}
+
+.submit-section {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    padding: 1.5rem;
+    background: linear-gradient(to top, $color-white 80%, transparent);
+    z-index: 10;
+}
+
+.submit-btn {
+    width: 100%;
+    background: $color-black;
+    color: $color-white;
+    padding: 1rem 0;
+    border-radius: 1.25rem;
+    font-weight: 600;
+    font-size: 16px;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    transition: transform 0.2s ease;
+
+    &:active {
+        transform: scale(0.98);
+    }
+
+    i {
+        width: 1.25rem;
+        height: 1.25rem;
+        margin-right: 0.5rem;
+        animation: spin 1s linear infinite;
+    }
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: .5; }
+}
+</style>

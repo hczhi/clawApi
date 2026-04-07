@@ -20,6 +20,14 @@ const state = reactive({
     currentConceptImages: [],
     conceptImagesPreview: [],
     uploadingImages: false,
+    currentArea: null,
+
+    floorPlan: {
+        id: null,
+        grid_data: null,
+        bg_image_url: null,
+        bg_config: null
+    },
 
     formData: {
         title: '',
@@ -29,7 +37,8 @@ const state = reactive({
         payment_method: 'wechat',
         status: 'paid',
         notes: '',
-        payer_names: ''
+        payer_names: '',
+        decoration_area: ''
     },
 
     conceptForm: {
@@ -38,7 +47,8 @@ const state = reactive({
         style: '',
         source_type: 'other',
         reference_link: '',
-        image_urls: '[]'
+        image_urls: '[]',
+        decoration_area: ''
     },
 
     scrolled: false,
@@ -46,6 +56,14 @@ const state = reactive({
 });
 
 const constants = {
+    decorationAreas: [
+        { label: '客厅', value: '客厅' },
+        { label: '卧室', value: '卧室' },
+        { label: '卫浴', value: '卫浴' },
+        { label: '厨房', value: '厨房' },
+        { label: '阳台', value: '阳台' },
+        { label: '过道', value: '过道' }
+    ],
     paymentMethods: [
         { label: '微信', value: 'wechat' },
         { label: '支付宝', value: 'alipay' },
@@ -68,16 +86,19 @@ const computedProps = {
     currentDate: computed(() => dayjs().format('MM月DD日 dddd')),
     viewTitle: computed(() => {
         const titles = {
-            'home': '我的新家',
+            'home': '',
             'expenses': '账单记录',
             'expense-detail': '账单详情',
             'expense-form': state.formData.id ? '编辑账单' : '记一笔账',
             'concepts': '灵感收集',
             'concept-detail': '灵感详情',
             'concept-form': state.conceptForm.id ? '编辑灵感' : '添加灵感',
-            'assistant': 'AI 助手'
+            'assistant': 'AI 助手',
+            'myhome': '',
+            'edit-home': '编辑户型',
+            'area-detail': state.currentArea ? `${state.currentArea}详情` : '空间详情'
         };
-        return titles[state.currentView] || '装修管理';
+        return titles[state.currentView] || '';
     }),
     currentViewComponent: computed(() => {
         const map = {
@@ -88,7 +109,10 @@ const computedProps = {
             'concepts': 'ConceptsView',
             'concept-detail': 'ConceptDetailView',
             'concept-form': 'ConceptFormView',
-            'assistant': 'AssistantView'
+            'assistant': 'AssistantView',
+            'myhome': 'MyHomeView',
+            'edit-home': 'EditHomeView',
+            'area-detail': 'AreaDetailView'
         };
         return map[state.currentView] || 'HomeView';
     })
@@ -154,7 +178,7 @@ const actions = {
             } else {
                 state.formData = {
                     title: '', amount: null, category_id: state.categories.length ? state.categories[0].id : '',
-                    payment_date: dayjs().format('YYYY-MM-DD'), payment_method: 'wechat', status: 'paid', notes: '', payer_names: ''
+                    payment_date: dayjs().format('YYYY-MM-DD'), payment_method: 'wechat', status: 'paid', notes: '', payer_names: '', decoration_area: params?.area || ''
                 };
             }
         } else if (view === 'expenses') {
@@ -174,10 +198,14 @@ const actions = {
                 }
             } else {
                 state.conceptForm = {
-                    title: '', description: '', style: '', source_type: 'other', reference_link: '', image_urls: '[]'
+                    title: '', description: '', style: '', source_type: 'other', reference_link: '', image_urls: '[]', decoration_area: params?.area || ''
                 };
                 state.conceptImagesPreview = [];
             }
+        } else if (view === 'myhome' || view === 'edit-home') {
+            actions.fetchFloorPlan();
+        } else if (view === 'area-detail' && params?.area) {
+            state.currentArea = params.area;
         }
 
         state.viewHistory.push(view);
@@ -306,7 +334,33 @@ const actions = {
         } catch (error) { alert('图片上传失败: ' + (error.response?.data?.error || error.message)); } 
         finally { state.uploadingImages = false; event.target.value = ''; }
     },
-    removeConceptImage: (index) => state.conceptImagesPreview.splice(index, 1)
+    removeConceptImage: (index) => state.conceptImagesPreview.splice(index, 1),
+    fetchFloorPlan: async () => {
+        try {
+            const res = await axios.get('/api/floor-plans');
+            if (res.data.success && res.data.data) {
+                state.floorPlan = res.data.data;
+            }
+        } catch (error) {
+            console.error('Failed to fetch floor plan:', error);
+        }
+    },
+    saveFloorPlan: async (data) => {
+        try {
+            state.saving = true;
+            const res = await axios.post('/api/floor-plans', data);
+            if (res.data.success) {
+                state.floorPlan = res.data.data;
+                return true;
+            }
+            return false;
+        } catch (error) {
+            console.error('Failed to save floor plan:', error);
+            return false;
+        } finally {
+            state.saving = false;
+        }
+    }
 };
 
 export const useAppStore = () => {

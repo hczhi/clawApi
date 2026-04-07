@@ -1,61 +1,62 @@
 <template>
-    <div class="absolute inset-0 overflow-y-auto bg-[#FAFAFA] text-[#111111] pb-32 page-content scroll-smooth">
+    <div class="concept-detail-container pb-safe">
         <!-- Huge Background Text -->
-        <div class="absolute inset-0 flex items-center justify-center pointer-events-none select-none overflow-hidden z-0 fixed">
-            <span class="text-[28vh] font-black text-black/[0.02] tracking-tighter whitespace-nowrap rotate-[-90deg] md:rotate-0 origin-center select-none scale-[1.8] md:scale-100">
+        <div class="massive-bg-wrapper">
+            <span class="massive-text">
                 DETAILS
             </span>
         </div>
 
-        <div v-if="state.currentConcept" class="relative z-10">
+        <div v-if="state.currentConcept" class="detail-content">
             <!-- Hero Image -->
-            <div v-if="state.currentConceptImages.length > 0" class="w-full h-[45vh] relative overflow-hidden bg-black/5">
-                <img :src="state.currentConceptImages[0]" class="absolute inset-0 w-full h-full object-cover" />
+            <div v-if="state.currentConceptImages.length > 0" class="hero-image-wrapper">
+                <img :src="state.currentConceptImages[0]" class="hero-image" />
                 <!-- Gradient Overlay -->
-                <div class="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-[#FAFAFA]"></div>
+                <div class="hero-gradient"></div>
             </div>
-            <div v-else class="w-full h-32 pt-16"></div>
+            <div v-else class="hero-spacer"></div>
 
-            <div class="px-6 relative" :class="state.currentConceptImages.length > 0 ? '-mt-24' : ''">
+            <div class="content-section" :class="{'has-hero': state.currentConceptImages.length > 0}">
                 <!-- Content Card -->
-                <div class="bg-white/90 backdrop-blur-xl rounded-[2.5rem] p-8 shadow-[0_30px_60px_rgba(0,0,0,0.08)] border border-black/5 mb-8">
+                <div class="info-card">
                     
                     <!-- Tags -->
-                    <div class="flex flex-wrap items-center gap-2 mb-6">
-                        <span class="bg-[#111111] text-white text-[10px] font-black px-4 py-1.5 rounded-full tracking-[0.15em] uppercase shadow-sm">{{ helpers.getSourceText(state.currentConcept.source_type) }}</span>
-                        <span class="bg-black/5 text-black/60 text-[10px] font-black px-4 py-1.5 rounded-full tracking-[0.15em] uppercase">{{ state.currentConcept.style || 'INSPIRATION' }}</span>
+                    <div class="tags-list">
+                        <span class="tag tag-primary">{{ helpers.getSourceText(state.currentConcept.source_type) }}</span>
+                        <span class="tag tag-secondary">{{ state.currentConcept.style || 'INSPIRATION' }}</span>
+                        <span v-if="state.currentConcept.decoration_area" class="tag tag-secondary">{{ state.currentConcept.decoration_area }}</span>
                     </div>
                     
                     <!-- Title -->
-                    <h2 class="text-3xl font-black tracking-tighter mb-6 leading-[1.15]">{{ state.currentConcept.title }}</h2>
+                    <h2 class="concept-title">{{ state.currentConcept.title }}</h2>
                     
                     <!-- Description -->
-                    <div v-if="state.currentConcept.description" class="mb-8">
-                        <p class="text-[15px] text-black/70 leading-relaxed whitespace-pre-wrap font-medium">{{ state.currentConcept.description }}</p>
+                    <div v-if="state.currentConcept.description" class="concept-description">
+                        <p>{{ state.currentConcept.description }}</p>
                     </div>
 
                     <!-- Link -->
-                    <div v-if="state.currentConcept.reference_link" class="pt-6 border-t border-black/5">
-                        <a :href="state.currentConcept.reference_link" target="_blank" class="inline-flex items-center text-[12px] font-black uppercase tracking-widest text-[#111111] hover:text-black/50 transition-colors group">
-                            <span class="border-b border-black/20 group-hover:border-black/50 pb-0.5">查看原链接</span>
-                            <i data-lucide="arrow-up-right" class="w-4 h-4 ml-1 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform"></i>
+                    <div v-if="state.currentConcept.reference_link" class="reference-link">
+                        <a :href="state.currentConcept.reference_link" target="_blank">
+                            <span>查看原链接</span>
+                            <i data-lucide="arrow-up-right"></i>
                         </a>
                     </div>
                 </div>
 
                 <!-- All Images -->
-                <div v-if="state.currentConceptImages.length > 0" class="space-y-4 mb-10">
-                    <div v-for="(img, idx) in state.currentConceptImages" :key="idx" class="relative rounded-[2rem] overflow-hidden shadow-[0_15px_30px_rgba(0,0,0,0.05)] border border-black/5 bg-black/5">
-                        <img :src="img" class="w-full object-cover" />
+                <div v-if="state.currentConceptImages.length > 0" class="images-list">
+                    <div v-for="(img, idx) in state.currentConceptImages" :key="idx" class="image-item">
+                        <img :src="img" />
                     </div>
                 </div>
                 
                 <!-- Action Buttons -->
-                <div class="flex space-x-4">
-                    <button @click="actions.navigate('concept-form', { mode: 'edit', id: state.currentConcept.id })" class="flex-1 bg-[#111111] text-white py-4 rounded-full font-bold text-[15px] active:scale-95 transition-all shadow-sm">
+                <div class="action-buttons">
+                    <button @click="actions.navigate('concept-form', { mode: 'edit', id: state.currentConcept.id })" class="btn-edit">
                         编辑参考
                     </button>
-                    <button @click="actions.deleteConcept" class="w-16 flex-shrink-0 bg-white text-[#ff3b30] border border-black/5 flex items-center justify-center rounded-full active:scale-95 transition-all shadow-sm font-black text-xs">
+                    <button @click="actions.deleteConcept" class="btn-delete">
                         DEL
                     </button>
                 </div>
@@ -68,3 +69,247 @@
 import { useAppStore } from '../store.js';
 const { state, constants, computedProps, helpers, actions } = useAppStore();
 </script>
+
+<style scoped lang="scss">
+.concept-detail-container {
+    @extend .app-container;
+    @extend .page-content;
+    padding-bottom: 8rem;
+    overflow-y: auto;
+    scroll-behavior: smooth;
+}
+
+.massive-bg-wrapper {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    user-select: none;
+    overflow: hidden;
+    z-index: 0;
+}
+
+.massive-text {
+    font-size: 28vh;
+    font-weight: 900;
+    color: rgba($color-black, 0.02);
+    letter-spacing: -0.05em;
+    white-space: nowrap;
+    transform: rotate(-90deg) scale(1.8);
+    transform-origin: center;
+    
+    @media (min-width: 768px) {
+        transform: rotate(0) scale(1);
+    }
+}
+
+.detail-content {
+    position: relative;
+    z-index: 10;
+}
+
+.hero-image-wrapper {
+    width: 100%;
+    height: 45vh;
+    position: relative;
+    overflow: hidden;
+    background: rgba($color-black, 0.05);
+}
+
+.hero-image {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.hero-gradient {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, rgba($color-black, 0.1), transparent, $color-white);
+}
+
+.hero-spacer {
+    width: 100%;
+    height: 8rem;
+    padding-top: 4rem;
+}
+
+.content-section {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+    position: relative;
+
+    &.has-hero {
+        margin-top: -6rem;
+    }
+}
+
+.info-card {
+    background: rgba($color-white, 0.9);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border-radius: 2.5rem;
+    padding: 2rem;
+    box-shadow: 0 30px 60px rgba(0,0,0,0.08);
+    border: 1px solid rgba($color-black, 0.05);
+    margin-bottom: 2rem;
+}
+
+.tags-list {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.tag {
+    font-size: 10px;
+    font-weight: 900;
+    padding: 0.375rem 1rem;
+    border-radius: 9999px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+
+    &.tag-primary {
+        background: $color-black;
+        color: $color-white;
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    }
+
+    &.tag-secondary {
+        background: rgba($color-black, 0.05);
+        color: rgba($color-black, 0.6);
+    }
+}
+
+.concept-title {
+    font-size: 1.875rem;
+    line-height: 2.25rem;
+    font-weight: 900;
+    letter-spacing: -0.05em;
+    margin-bottom: 1.5rem;
+    line-height: 1.15;
+}
+
+.concept-description {
+    margin-bottom: 2rem;
+    
+    p {
+        font-size: 15px;
+        color: rgba($color-black, 0.7);
+        line-height: 1.625;
+        white-space: pre-wrap;
+        font-weight: 500;
+    }
+}
+
+.reference-link {
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba($color-black, 0.05);
+
+    a {
+        display: inline-flex;
+        align-items: center;
+        font-size: 12px;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: $color-black;
+        transition: color 0.3s ease;
+
+        &:hover {
+            color: rgba($color-black, 0.5);
+        }
+
+        span {
+            border-bottom: 1px solid rgba($color-black, 0.2);
+            padding-bottom: 0.125rem;
+            transition: border-color 0.3s ease;
+
+            a:hover & {
+                border-color: rgba($color-black, 0.5);
+            }
+        }
+
+        i {
+            width: 1rem;
+            height: 1rem;
+            margin-left: 0.25rem;
+            transition: transform 0.3s ease;
+
+            a:hover & {
+                transform: translate(0.125rem, -0.125rem);
+            }
+        }
+    }
+}
+
+.images-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 2.5rem;
+}
+
+.image-item {
+    position: relative;
+    border-radius: 2rem;
+    overflow: hidden;
+    box-shadow: 0 15px 30px rgba(0,0,0,0.05);
+    border: 1px solid rgba($color-black, 0.05);
+    background: rgba($color-black, 0.05);
+
+    img {
+        width: 100%;
+        object-fit: cover;
+        display: block;
+    }
+}
+
+.action-buttons {
+    display: flex;
+    gap: 1rem;
+}
+
+.btn-edit {
+    flex: 1;
+    background: $color-black;
+    color: $color-white;
+    padding: 1rem 0;
+    border-radius: 9999px;
+    font-weight: bold;
+    font-size: 15px;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    transition: all 0.2s ease;
+    border: none;
+
+    &:active {
+        transform: scale(0.95);
+    }
+}
+
+.btn-delete {
+    width: 4rem;
+    flex-shrink: 0;
+    background: $color-white;
+    color: #ff3b30;
+    border: 1px solid rgba($color-black, 0.05);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9999px;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    transition: all 0.2s ease;
+    font-size: 12px;
+    font-weight: 900;
+
+    &:active {
+        transform: scale(0.95);
+    }
+}
+</style>

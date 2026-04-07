@@ -15,13 +15,36 @@ const options = {
             throw Object.assign(new Error(res.statusText + ' ' + url), { res });
         return {
             getContentData: asBinary => asBinary ? res.arrayBuffer() : res.text(),
-            type: url.endsWith('.vue') ? '.vue' : '.mjs'
+            type: url.endsWith('.vue') ? '.vue' : (url.endsWith('.scss') ? '.scss' : '.mjs')
         }
     },
     addStyle(textContent) {
         const style = Object.assign(document.createElement('style'), { textContent });
         const ref = document.head.getElementsByTagName('style')[0] || null;
         document.head.insertBefore(style, ref);
+    },
+    async processStyles(src, lang, filename, options) {
+        if (lang === 'scss') {
+            try {
+                const varsRes = await fetch('/app/scss/_variables.scss');
+                const vars = await varsRes.text();
+                const fullSrc = vars + '\n' + src;
+                
+                return new Promise((resolve, reject) => {
+                    Sass.compile(fullSrc, result => {
+                        if (result.status === 0) resolve(result.text);
+                        else reject(new Error(result.message));
+                    });
+                });
+            } catch (e) {
+                console.error("SCSS Compile error:", e);
+                return src;
+            }
+        }
+        return src;
+    },
+    handleModule(type, getContentData, path, options) {
+        // No custom handling needed for SCSS now, handled by vue3-sfc-loader internally
     },
     log(type, ...args) {
         console[type](...args);
@@ -43,7 +66,10 @@ const app = createApp({
         ConceptsView: loadVueComponent('ConceptsView'),
         ConceptDetailView: loadVueComponent('ConceptDetailView'),
         ConceptFormView: loadVueComponent('ConceptFormView'),
-        AssistantView: loadVueComponent('AssistantView')
+        AssistantView: loadVueComponent('AssistantView'),
+        MyHomeView: loadVueComponent('MyHomeView'),
+        EditHomeView: loadVueComponent('EditHomeView'),
+        AreaDetailView: loadVueComponent('AreaDetailView')
     },
     setup() {
         const store = useAppStore();

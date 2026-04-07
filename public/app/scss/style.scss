@@ -1,0 +1,420 @@
+@import 'variables';
+
+// Base Setup
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  font-family: $font-sans;
+  background-color: $color-brand-light;
+  color: $color-brand-dark;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow: hidden; // App-like feel
+  width: 100vw;
+  height: 100vh;
+}
+
+// Resets
+button, input, select, textarea {
+  font-family: inherit;
+  color: inherit;
+  background: transparent;
+  border: none;
+  outline: none;
+}
+
+button {
+  cursor: pointer;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+ul, ol {
+  list-style: none;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+// Global Utility Classes (Used frequently across components)
+
+// Typography
+.text-xs { font-size: 0.75rem; line-height: 1rem; }
+.text-sm { font-size: 0.875rem; line-height: 1.25rem; }
+.text-base { font-size: 1rem; line-height: 1.5rem; }
+.text-lg { font-size: 1.125rem; line-height: 1.75rem; }
+.text-xl { font-size: 1.25rem; line-height: 1.75rem; }
+.text-2xl { font-size: 1.5rem; line-height: 2rem; }
+.text-3xl { font-size: 1.875rem; line-height: 2.25rem; }
+.text-4xl { font-size: 2.25rem; line-height: 2.5rem; }
+.text-5xl { font-size: 3rem; line-height: 1; }
+.text-6xl { font-size: 3.75rem; line-height: 1; }
+
+.font-medium { font-weight: 500; }
+.font-bold { font-weight: 700; }
+.font-black { font-weight: 900; }
+
+.tracking-tighter { letter-spacing: -0.05em; }
+.tracking-tight { letter-spacing: -0.025em; }
+.tracking-wide { letter-spacing: 0.025em; }
+.tracking-widest { letter-spacing: 0.1em; }
+
+.uppercase { text-transform: uppercase; }
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// Common structural classes
+.app-container {
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  background-color: $color-brand-light;
+}
+
+.page-content {
+  flex: 1;
+  overflow-y: auto;
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 20px);
+}
+
+// Animations
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideRight {
+  from { opacity: 0; transform: translateX(-40px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(-25%); animation-timing-function: cubic-bezier(0.8,0,1,1); }
+  50% { transform: none; animation-timing-function: cubic-bezier(0,0,0.2,1); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .5; }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  opacity: 0;
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  opacity: 0;
+}
+
+.animate-slide-right {
+  animation: slideRight 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  opacity: 0;
+}
+
+// Vue Transitions
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.slide-left-enter-active,
+.slide-left-leave-active,
+.slide-right-enter-active,
+.slide-right-leave-active {
+  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  position: absolute;
+  width: 100%;
+  height: 100%;
+}
+
+.slide-left-enter-from {
+  opacity: 0;
+  transform: translateX(30px);
+}
+.slide-left-leave-to {
+  opacity: 0;
+  transform: translateX(-30px);
+}
+
+.slide-right-enter-from {
+  opacity: 0;
+  transform: translateX(-30px);
+}
+.slide-right-leave-to {
+  opacity: 0;
+  transform: translateX(30px);
+}
+
+.slide-up-fade-enter-active,
+.slide-up-fade-leave-active {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.slide-up-fade-enter-from,
+.slide-up-fade-leave-to {
+  opacity: 0;
+  transform: translate(-50%, 20px);
+}
+
+[v-cloak] {
+  display: none !important;
+}
+
+// Root and Layout
+.app-root {
+    height: 100vh;
+    width: 100vw;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+    background-color: $color-brand-light;
+}
+
+.app-main {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+// Header
+.app-header {
+    height: 4rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 1.25rem;
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 50;
+    transition: all 0.5s ease;
+
+    &.header-scrolled {
+        background: rgba($color-white, 0.8);
+        backdrop-filter: blur(24px);
+        -webkit-backdrop-filter: blur(24px);
+        border-bottom: 1px solid rgba($color-black, 0.05);
+        color: $color-black;
+    }
+
+    &.header-transparent {
+        background: transparent;
+    }
+}
+
+.header-left, .header-right {
+    flex: 1;
+    display: flex;
+}
+
+.header-left {
+    justify-content: flex-start;
+}
+
+.header-right {
+    justify-content: flex-end;
+}
+
+.header-title {
+    font-size: 1.125rem;
+    font-weight: 500;
+    letter-spacing: 0.025em;
+    flex: 1;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: opacity 0.3s ease;
+
+    &.opacity-0 {
+        opacity: 0;
+    }
+
+    &.opacity-100 {
+        opacity: 1;
+    }
+}
+
+.icon-btn {
+    width: 2.5rem;
+    height: 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+    margin-left: -0.5rem;
+    margin-right: -0.5rem;
+
+    &:hover {
+        background: rgba($color-black, 0.05);
+    }
+
+    &:active {
+        transform: scale(0.9);
+    }
+
+    i {
+        width: 1.5rem;
+        height: 1.5rem;
+    }
+
+    .text-white { color: $color-white; }
+    .text-black { color: $color-black; }
+}
+
+// FAB Menu
+.fab-container {
+    position: fixed;
+    bottom: 1.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 40;
+    width: 3.5rem;
+    height: 3.5rem;
+    pointer-events: none;
+}
+
+.fab-backdrop {
+    position: fixed;
+    inset: 0;
+    background: transparent;
+    pointer-events: auto;
+    z-index: 30;
+}
+
+.fab-menu {
+    position: absolute;
+    inset: 0;
+    z-index: 40;
+    pointer-events: none;
+}
+
+.fab-item {
+    position: absolute;
+    pointer-events: auto;
+    
+    &.fab-item-1 { top: -64px; left: -56px; }
+    &.fab-item-2 { top: -64px; right: -56px; }
+    &.fab-item-3 { top: -88px; left: 50%; transform: translateX(-50%); }
+}
+
+.fab-sub-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: $color-white;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.12);
+    border: 1px solid rgba($color-black, 0.05);
+    transition: all 0.3s ease;
+    color: $color-brand-dark;
+
+    &:active {
+        transform: scale(0.95);
+    }
+
+    &:hover {
+        transform: translateY(-0.25rem);
+        background: $color-black;
+        color: $color-white;
+    }
+}
+
+.fab-sub-btn-text {
+    font-size: 14px;
+    font-weight: bold;
+    transition: color 0.3s ease;
+
+    .fab-sub-btn:hover & {
+        color: $color-white;
+    }
+}
+
+.fab-main-btn {
+    position: absolute;
+    inset: 0;
+    width: 3.5rem;
+    height: 3.5rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    transition: all 0.3s ease;
+    pointer-events: auto;
+    z-index: 50;
+
+    &:active {
+        transform: scale(0.9);
+    }
+
+    &.fab-main-open {
+        background: $color-white;
+        color: $color-brand-dark;
+        transform: rotate(135deg);
+    }
+
+    &.fab-main-closed {
+        background: $color-brand-dark;
+        color: $color-white;
+        transform: rotate(0);
+    }
+
+    i {
+        width: 1.5rem;
+        height: 1.5rem;
+    }
+}
+
+// End of global styles

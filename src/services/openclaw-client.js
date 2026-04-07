@@ -7,9 +7,9 @@ const WebSocket = require('ws');
  */
 class OpenclawClient {
   constructor(options = {}) {
-    this.baseUrl = options.baseUrl || 'ws://106.53.160.55:18789';
+    this.baseUrl = options.baseUrl || 'ws://170.106.137.46:28502/';
     this.sessionKey = options.sessionKey || 'agent:main:main';
-    this.token = options.token || '6231b19034cd32b9621b579b053b0b336a7750d95b98679c';
+    this.token = options.token || 'd070b2042a98d38e6c78a7f4a4f7bb911d29d4a694f5c3f3';
     this.autoReconnect = options.autoReconnect ?? true;
     this.reconnectDelay = options.reconnectDelay || 3000;
     

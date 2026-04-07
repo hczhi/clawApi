@@ -149,7 +149,7 @@ router.get('/:id', (req, res) => {
  */
 router.post('/', (req, res) => {
   try {
-    const { title, phase, milestone_type, planned_start, planned_end, responsible_party, vendor_id, related_order_ids, tags, notes, progress_notes, photo_url } = req.body;
+    const { title, phase, milestone_type, planned_start, planned_end, responsible_party, vendor_id, related_order_ids, tags, notes, progress_notes, photo_url, decoration_area } = req.body;
     
     if (!title || !phase || !planned_start || !planned_end) {
       return res.status(400).json({ success: false, error: '标题、阶段、计划开始和结束日期不能为空' });
@@ -162,9 +162,9 @@ router.post('/', (req, res) => {
     
     const result = db.run(`
       INSERT INTO renovation_timeline 
-      (title, phase, milestone_type, planned_start, planned_end, actual_start, actual_end, status, progress_percent, responsible_party, vendor_id, related_order_ids, quality_check_passed, inspection_notes, photo_url, progress_notes, tags, notes)
-      VALUES (?, ?, ?, ?, ?, NULL, NULL, 'not_started', 0, ?, ?, ?, 0, '', ?, ?, ?, ?)
-    `, [title, phase, milestone_type || 'routine_task', planned_start, planned_end, responsible_party || null, vendor_id || null, related_order_ids || null, photo_url || null, progress_notes || null, tags || null, notes || null]);
+      (title, phase, milestone_type, planned_start, planned_end, actual_start, actual_end, status, progress_percent, responsible_party, vendor_id, related_order_ids, quality_check_passed, inspection_notes, photo_url, progress_notes, tags, notes, decoration_area)
+      VALUES (?, ?, ?, ?, ?, NULL, NULL, 'not_started', 0, ?, ?, ?, 0, '', ?, ?, ?, ?, ?)
+    `, [title, phase, milestone_type || 'routine_task', planned_start, planned_end, responsible_party || null, vendor_id || null, related_order_ids || null, photo_url || null, progress_notes || null, tags || null, notes || null, decoration_area || null]);
     
     const newTimeline = db.get(`
       SELECT 
@@ -187,17 +187,23 @@ router.post('/', (req, res) => {
 router.put('/:id', (req, res) => {
   try {
     const { id } = req.params;
-    const { title, phase, planned_start, planned_end, actual_start, actual_end, status, progress_percent, responsible_party, quality_check_passed, inspection_notes, photo_url, progress_notes } = req.body;
+    const { title, phase, milestone_type, planned_start, planned_end, actual_start, actual_end, status, progress_percent, responsible_party, vendor_id, related_order_ids, quality_check_passed, inspection_notes, photo_url, progress_notes, tags, notes, decoration_area } = req.body;
     
     const existing = db.get('SELECT * FROM renovation_timeline WHERE id = ?', [id]);
     if (!existing) {
-      return res.status(404).json({ success: false, error: '进度记录不存在' });
+      return res.status(404).json({ success: false, error: '任务不存在' });
+    }
+    
+    // 如果状态更新为已完成且未设置实际结束时间，自动设置为今天
+    let finalActualEnd = actual_end;
+    if (status === 'completed' && existing.status !== 'completed' && !actual_end) {
+      finalActualEnd = new Date().toISOString().split('T')[0];
     }
     
     // 自动计算状态（如果没提供）
     let finalStatus = status;
     if (!finalStatus) {
-      if (actual_end) finalStatus = 'completed';
+      if (finalActualEnd) finalStatus = 'completed';
       else if (actual_start) finalStatus = 'in_progress';
       else finalStatus = 'not_started';
     }
@@ -206,6 +212,7 @@ router.put('/:id', (req, res) => {
       UPDATE renovation_timeline 
       SET title = COALESCE(?, title),
           phase = COALESCE(?, phase),
+          milestone_type = COALESCE(?, milestone_type),
           planned_start = COALESCE(?, planned_start),
           planned_end = COALESCE(?, planned_end),
           actual_start = COALESCE(?, actual_start),
@@ -213,13 +220,18 @@ router.put('/:id', (req, res) => {
           status = COALESCE(?, finalStatus),
           progress_percent = COALESCE(?, progress_percent),
           responsible_party = COALESCE(?, responsible_party),
+          vendor_id = COALESCE(?, vendor_id),
+          related_order_ids = COALESCE(?, related_order_ids),
           quality_check_passed = COALESCE(?, quality_check_passed),
           inspection_notes = COALESCE(?, inspection_notes),
           photo_url = COALESCE(?, photo_url),
           progress_notes = COALESCE(?, progress_notes),
+          tags = COALESCE(?, tags),
+          notes = COALESCE(?, notes),
+          decoration_area = COALESCE(?, decoration_area),
           updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
-    `, [title, phase, planned_start, planned_end, actual_start, actual_end, finalStatus, progress_percent, responsible_party, quality_check_passed, inspection_notes, photo_url, progress_notes, id]);
+    `, [title, phase, milestone_type, planned_start, planned_end, actual_start, finalActualEnd, finalStatus, progress_percent, responsible_party, vendor_id, related_order_ids, quality_check_passed, inspection_notes, photo_url, progress_notes, tags, notes, decoration_area, id]);
     
     const updated = db.get(`
       SELECT 

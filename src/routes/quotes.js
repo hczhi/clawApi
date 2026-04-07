@@ -100,7 +100,7 @@ router.get('/:id', (req, res) => {
  */
 router.post('/', (req, res) => {
   try {
-    const { vendor_id, category_id, design_concept_id, project_name, description, amount, currency, validity_start, validity_end, notes } = req.body;
+    const { vendor_id, category_id, design_concept_id, project_name, description, amount, currency, validity_start, validity_end, notes, decoration_area } = req.body;
     
     if (!vendor_id || !category_id || !project_name) {
       return res.status(400).json({ success: false, error: '商家 ID、分类 ID、项目名称不能为空' });
@@ -115,9 +115,9 @@ router.post('/', (req, res) => {
     }
     
     const result = db.run(`
-      INSERT INTO quotes (vendor_id, category_id, design_concept_id, project_name, description, amount, currency, validity_start, validity_end, notes)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `, [vendor_id, category_id, design_concept_id || null, project_name, description || null, amount, currency || 'CNY', validity_start || null, validity_end || null, notes || null]);
+      INSERT INTO quotes (vendor_id, category_id, design_concept_id, project_name, description, amount, currency, validity_start, validity_end, notes, decoration_area)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [vendor_id, category_id, design_concept_id || null, project_name, description || null, amount, currency || 'CNY', validity_start || null, validity_end || null, notes || null, decoration_area || null]);
     
     const newQuote = db.get(`
       SELECT 
@@ -142,7 +142,7 @@ router.post('/', (req, res) => {
 router.put('/:id', (req, res) => {
   try {
     const { id } = req.params;
-    const { project_name, description, amount, status, priority, validity_end, notes } = req.body;
+    const { vendor_id, category_id, design_concept_id, project_name, description, amount, currency, status, priority, validity_start, validity_end, notes, decoration_area } = req.body;
     
     const existing = db.get('SELECT * FROM quotes WHERE id = ?', [id]);
     if (!existing) {
@@ -151,16 +151,22 @@ router.put('/:id', (req, res) => {
     
     db.run(`
       UPDATE quotes 
-      SET project_name = COALESCE(?, project_name),
+      SET vendor_id = COALESCE(?, vendor_id),
+          category_id = COALESCE(?, category_id),
+          design_concept_id = COALESCE(?, design_concept_id),
+          project_name = COALESCE(?, project_name),
           description = COALESCE(?, description),
           amount = COALESCE(?, amount),
+          currency = COALESCE(?, currency),
           status = COALESCE(?, status),
           priority = COALESCE(?, priority),
+          validity_start = COALESCE(?, validity_start),
           validity_end = COALESCE(?, validity_end),
           notes = COALESCE(?, notes),
+          decoration_area = COALESCE(?, decoration_area),
           updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
-    `, [project_name, description, amount, status, priority, validity_end, notes, id]);
+    `, [vendor_id, category_id, design_concept_id, project_name, description, amount, currency, status, priority, validity_start, validity_end, notes, decoration_area, id]);
     
     const updated = db.get(`
       SELECT 

@@ -5,7 +5,9 @@
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
-    "dev": "nodemon src/index.js",
+    "dev": "npm run build:css && nodemon src/index.js",
+    "build:css": "sass public/app/scss:public/app/css --style=compressed",
+    "watch:css": "sass --watch public/app/scss:public/app/css",
     "init-db": "node scripts/init-database.js",
     "seed": "node scripts/seed-data.js",
     "test": "jest"
@@ -31,6 +33,7 @@
   "devDependencies": {
     "jest": "^29.7.0",
     "nodemon": "^3.0.2",
+    "sass": "^1.99.0",
     "supertest": "^6.3.3"
   }
 }

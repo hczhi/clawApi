@@ -75,7 +75,7 @@ router.get('/:id', (req, res) => {
  */
 router.post('/', (req, res) => {
   try {
-    const { title, space_name, task_id, photo_before_url, photo_after_url, video_url, overall_rating, quality_rating, material_rating, aesthetics_rating, experience_notes, lessons_learned, tags, notes } = req.body;
+    const { title, space_name, task_id, photo_before_url, photo_after_url, video_url, overall_rating, quality_rating, material_rating, aesthetics_rating, experience_notes, lessons_learned, tags, notes, decoration_area } = req.body;
     
     if (!title || !space_name) {
       return res.status(400).json({ success: false, error: '标题和装修区域不能为空' });
@@ -88,9 +88,9 @@ router.post('/', (req, res) => {
     
     const result = db.run(`
       INSERT INTO renovation_results 
-      (title, space_name, task_id, photo_before_url, photo_after_url, video_url, overall_rating, quality_rating, material_rating, aesthetics_rating, experience_notes, lessons_learned, tags, notes)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `, [title, space_name, task_id || null, photo_before_url || null, photo_after_url || null, video_url || null, overall_rating || null, quality_rating || null, material_rating || null, aesthetics_rating || null, experience_notes || null, lessons_learned || null, tags || null, notes || null]);
+      (title, space_name, task_id, photo_before_url, photo_after_url, video_url, overall_rating, quality_rating, material_rating, aesthetics_rating, experience_notes, lessons_learned, tags, notes, decoration_area)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [title, space_name, task_id || null, photo_before_url || null, photo_after_url || null, video_url || null, overall_rating || null, quality_rating || null, material_rating || null, aesthetics_rating || null, experience_notes || null, lessons_learned || null, tags || null, notes || null, decoration_area || null]);
     
     const newResult = db.get(`
       SELECT 
@@ -114,7 +114,7 @@ router.post('/', (req, res) => {
 router.put('/:id', (req, res) => {
   try {
     const { id } = req.params;
-    const { title, space_name, photo_before_url, photo_after_url, video_url, overall_rating, quality_rating, material_rating, aesthetics_rating, experience_notes, lessons_learned, tags, notes } = req.body;
+    const { title, space_name, photo_before_url, photo_after_url, video_url, overall_rating, quality_rating, material_rating, aesthetics_rating, experience_notes, lessons_learned, tags, notes, decoration_area } = req.body;
     
     const existing = db.get('SELECT * FROM renovation_results WHERE id = ?', [id]);
     if (!existing) {
@@ -136,9 +136,10 @@ router.put('/:id', (req, res) => {
           lessons_learned = COALESCE(?, lessons_learned),
           tags = COALESCE(?, tags),
           notes = COALESCE(?, notes),
+          decoration_area = COALESCE(?, decoration_area),
           updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
-    `, [title, space_name, photo_before_url, photo_after_url, video_url, overall_rating, quality_rating, material_rating, aesthetics_rating, experience_notes, lessons_learned, tags, notes, id]);
+    `, [title, space_name, photo_before_url, photo_after_url, video_url, overall_rating, quality_rating, material_rating, aesthetics_rating, experience_notes, lessons_learned, tags, notes, decoration_area, id]);
     
     const updated = db.get(`
       SELECT 
