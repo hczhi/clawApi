@@ -1,88 +1,147 @@
 <template>
-    <div class="app-container page-content expense-detail-container pb-safe">
-        <!-- Huge Background Text -->
-        <div class="massive-bg-wrapper">
-            <span class="massive-text">
-                PLAN
-            </span>
+    <div class="myhome-container app-container pb-safe">
+        
+        <!-- Background Layer -->
+        <div class="myhome-bg-layer">
+            <div class="massive-text">PLAN</div>
         </div>
 
-        <div v-if="state.currentPurchasePlan" class="detail-content animate-slide-up">
-            <!-- Modern Receipt Card -->
-            <div class="receipt-card">
-                <div class="card-glow" :class="helpers.getCategoryBgClass(state.currentPurchasePlan.category_id)"></div>
+        <!-- Main Panel (Left on Desktop, Top on Mobile) -->
+        <div class="main-glass-panel">
+            <div class="panel-content hide-scrollbar">
                 
-                <div class="receipt-header">
-                    <!-- <div class="category-icon" :class="helpers.getCategoryColorClass(state.currentPurchasePlan.category_id)">
-                        <span class="icon-text">{{ state.currentPurchasePlan.category_id ? String(state.currentPurchasePlan.category_id).substring(0,2) : '未' }}</span>
-                    </div> -->
-                    <h2 class="receipt-title">{{ state.currentPurchasePlan.item_name }}</h2>
-                    <p class="receipt-amount" v-if="state.currentPurchasePlan.status === '已购买'">¥{{ helpers.formatAmount(state.currentPurchasePlan.actual_price) }}</p>
-                    <p class="receipt-amount" v-else style="font-size: 2rem; color: #888;">¥{{ helpers.formatAmount(state.currentPurchasePlan.estimated_budget) }}</p>
+                <!-- Header -->
+                <div class="date-header animate-slide-right" style="animation-delay: 0.1s;">
+                    <div class="category-label">{{ state.currentPurchasePlan?.category_id || '未分类' }}</div>
+                    <h2 class="item-title">{{ state.currentPurchasePlan?.item_name || '加载中...' }}</h2>
+                </div>
+                
+                <!-- Info Block -->
+                <div class="info-block animate-slide-right" style="animation-delay: 0.2s;">
+                    <div class="info-row">
+                        <span class="label">状态</span>
+                        <span class="value status" :class="statusClass">{{ state.currentPurchasePlan?.status }}</span>
+                    </div>
+                    <div class="info-row" v-if="state.currentPurchasePlan?.decoration_area">
+                        <span class="label">区域</span>
+                        <span class="value">{{ state.currentPurchasePlan.decoration_area }}</span>
+                    </div>
+                    <div class="info-row" v-if="state.currentPurchasePlan?.estimated_budget">
+                        <span class="label">预算</span>
+                        <span class="value">¥{{ helpers.formatAmount(state.currentPurchasePlan.estimated_budget) }}</span>
+                    </div>
+                    <div class="info-row" v-if="state.currentPurchasePlan?.actual_price">
+                        <span class="label">实付</span>
+                        <span class="value font-black">¥{{ helpers.formatAmount(state.currentPurchasePlan.actual_price) }}</span>
+                    </div>
+                    <div class="info-row" v-if="state.currentPurchasePlan?.buy_date">
+                        <span class="label">购买日期</span>
+                        <span class="value">{{ state.currentPurchasePlan.buy_date }}</span>
+                    </div>
+                </div>
+                
+
+                
+
+                <!-- Plans Area (Right on Desktop, Bottom on Mobile) -->
+        <div class="plans-area animate-fade-in-up" style="animation-delay: 0.4s;">
+            <div class="right-top-text">
+                <div class="title">方案选项</div>
+                <div class="subtitle">滑动查看对比</div>
+            </div>
+
+            <div class="plans-scroll-container">
+                <div class="plans-scroll-track hide-scrollbar">
+                    <div v-for="planOption in parsedPlans" :key="planOption.id" 
+                         class="plan-swipe-card" 
+                         :class="{ 'is-active-plan': state.currentPurchasePlan?.selected_plan_id === planOption.id }">
+                        
+                        <div class="plan-card-header">
+                            <div class="plan-name-group">
+                                <span class="active-indicator" v-if="state.currentPurchasePlan?.selected_plan_id === planOption.id">当前选用</span>
+                                <h3 class="plan-name">{{ planOption.name || '方案' }}</h3>
+                            </div>
+                            <span class="plan-price" v-if="planOption.price">¥{{ helpers.formatAmount(planOption.price) }}</span>
+                            <span class="plan-price empty" v-else>未报价</span>
+                        </div>
+
+                        <div class="plan-details-grid">
+                            <div class="grid-item">
+                                <span class="grid-label">购买方式</span>
+                                <span class="grid-value">{{ planOption.purchase_method || '—' }}</span>
+                            </div>
+                            <div class="grid-item">
+                                <span class="grid-label">商家名称</span>
+                                <span class="grid-value">{{ planOption.merchant_name || '—' }}</span>
+                            </div>
+                            <div class="grid-item full-width">
+                                <span class="grid-label">商品链接</span>
+                                <a v-if="planOption.product_link" :href="planOption.product_link" target="_blank" class="grid-value link">
+                                    访问链接 <i data-lucide="external-link" class="inline-icon"></i>
+                                </a>
+                                <span v-else class="grid-value empty">—</span>
+                            </div>
+                            <div class="grid-item full-width">
+                                <span class="grid-label">备注</span>
+                                <p class="grid-value notes" v-if="planOption.notes">{{ planOption.notes }}</p>
+                                <span v-else class="grid-value empty">—</span>
+                            </div>
+                        </div>
+
+                        <div class="plan-images">
+                            <span class="grid-label">相关图片</span>
+                            <div v-if="planOption.image_urls && planOption.image_urls !== '[]'" class="image-row hide-scrollbar">
+                                <img v-for="(img, idx) in JSON.parse(planOption.image_urls)" 
+                                     :key="idx" :src="img" class="plan-img" 
+                                     @click="actions.previewImage(img)" />
+                            </div>
+                            <span v-else class="grid-value empty">—</span>
+                        </div>
+                    </div>
                     
-                    <span class="status-badge" :class="state.currentPurchasePlan.status === '已购买' ? 'status-purchased' : (state.currentPurchasePlan.status === '取消' ? 'status-cancelled' : 'status-planned')">
-                        {{ state.currentPurchasePlan.status }}
-                    </span>
-                </div>
-
-                <div class="divider"></div>
-
-                <div class="receipt-details">
-                    <div class="detail-row">
-                        <span class="detail-label">项目分类</span>
-                        <span class="detail-value">{{ state.currentPurchasePlan.category_id || '-' }}</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">购买方式</span>
-                        <span class="detail-value">{{ state.currentPurchasePlan.purchase_method || '-' }}</span>
-                    </div>
-                    <div v-if="state.currentPurchasePlan.decoration_area" class="detail-row">
-                        <span class="detail-label">使用区域</span>
-                        <span class="detail-value">{{ state.currentPurchasePlan.decoration_area }}</span>
-                    </div>
-                    <div class="detail-row" v-if="state.currentPurchasePlan.status === '已购买' && state.currentPurchasePlan.estimated_budget">
-                        <span class="detail-label">预算对比</span>
-                        <span class="detail-value" :style="{color: state.currentPurchasePlan.budget_diff > 0 ? '#ff3b30' : '#34c759'}">
-                            {{ state.currentPurchasePlan.budget_diff > 0 ? '超支' : '节约' }} ¥{{ Math.abs(state.currentPurchasePlan.budget_diff) }}
-                        </span>
-                    </div>
-                    <div v-if="state.currentPurchasePlan.merchant_name" class="detail-row">
-                        <span class="detail-label">商家名称</span>
-                        <span class="detail-value">{{ state.currentPurchasePlan.merchant_name }}</span>
-                    </div>
-                    <div v-if="state.currentPurchasePlan.product_link" class="detail-row">
-                        <span class="detail-label">商品链接</span>
-                        <a :href="state.currentPurchasePlan.product_link" target="_blank" class="detail-value" style="color: #007aff; text-decoration: underline; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">打开链接</a>
-                    </div>
-                    
-                    <div v-if="state.currentPurchasePlan.notes" class="notes-section">
-                        <span class="notes-label">备注</span>
-                        <p class="notes-content">{{ state.currentPurchasePlan.notes }}</p>
+                    <!-- Empty State -->
+                    <div v-if="parsedPlans.length === 0" class="empty-state-card">
+                        <i data-lucide="inbox" class="empty-icon"></i>
+                        <span class="empty-text">暂无方案</span>
                     </div>
                 </div>
-                <div v-if="state.currentPurchasePlan.image_urls && state.currentPurchasePlan.image_urls !== '[]'" class="detail-section animate-slide-up" style="animation-delay: 0.1s;">
-    
-                <div class="image-gallery">
-                    <img v-for="(img, idx) in JSON.parse(state.currentPurchasePlan.image_urls)" 
-                         :key="idx" :src="img" class="gallery-image" 
-                         @click="actions.previewImage(img)" />
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+                <div class="area-buttons animate-slide-right" style="animation-delay: 0.3s;">
+                    <button v-if="state.currentPurchasePlan?.status !== '已购买'" 
+                            @click="actions.openPurchaseModal"
+                            class="area-btn purchase-btn group">
+                        <div class="btn-left">
+                            <span class="label">标为已购买</span>
+                        </div>
+                        <div class="btn-icon"><i data-lucide="check"></i></div>
+                    </button>
+                </div>
+                <div class="logo-bottom animate-slide-right" style="animation-delay: 0.6s;">
+                    <i data-lucide="box" class="brand-icon"></i>
+                    <span class="logo-text">C.Lab / Purchase</span>
                 </div>
             </div>
-            </div>
+        </div>
 
-            
-            
-            <div class="action-buttons animate-slide-up" style="animation-delay: 0.2s;">
-                <button v-if="state.currentPurchasePlan.status !== '已购买'" @click="actions.openPurchaseModal" class="btn-purchase">
-                    标为已购买
-                </button>
-                <button @click="actions.navigate('purchase-plan-form', { mode: 'edit', id: state.currentPurchasePlan.id })" class="btn-edit">
-                    编辑清单
-                </button>
-                <button @click="actions.deletePurchasePlan" class="btn-delete">
-                    DEL
-                </button>
-            </div>
+        
+
+        <!-- Floating Edit Button -->
+        <div class="right-bottom-actions animate-fade-in-up" style="animation-delay: 0.5s;">
+            <button @click="actions.deletePurchasePlan" class="delete-float-btn group">
+                <span class="label">删除</span>
+                <div class="icon-wrap">
+                    <i data-lucide="trash-2"></i>
+                </div>
+            </button>
+            <button @click="actions.navigate('purchase-plan-form', { mode: 'edit', id: state.currentPurchasePlan?.id })" class="edit-btn group">
+                <span class="label">编辑</span>
+                <div class="icon-wrap">
+                    <i data-lucide="edit-2"></i>
+                </div>
+            </button>
         </div>
 
         <!-- Purchase Modal -->
@@ -90,12 +149,12 @@
             <div class="modal-content animate-slide-up">
                 <div class="modal-header">
                     <h3>确认已购买</h3>
-                    <button @click="actions.closePurchaseModal" class="btn-close">✕</button>
+                    <button @click="actions.closePurchaseModal" class="btn-close"><i data-lucide="x"></i></button>
                 </div>
                 <div class="modal-body form-fields">
                     <div class="form-group">
                         <label class="field-label">实际付款金额 (¥)</label>
-                        <input type="number" step="0.01" v-model="state.purchaseModal.data.actual_price" class="form-input" required>
+                        <input type="number" step="0.01" v-model="state.purchaseModal.data.actual_price" class="form-input" required placeholder="0.00">
                     </div>
                     <div class="form-group">
                         <label class="field-label">支付人</label>
@@ -111,17 +170,6 @@
                             </div>
                         </div>
                     </div>
-                    <!-- <div class="form-group">
-                        <label class="field-label">账单分类</label>
-                        <div class="select-wrapper">
-                            <select v-model="state.purchaseModal.data.category_id" class="form-select">
-                                <option v-for="cat in state.categories" :key="cat.id" :value="cat.id">
-                                    {{ cat.level > 1 ? '└ ' + cat.name : cat.name }}
-                                </option>
-                            </select>
-                            <span class="select-arrow">▼</span>
-                        </div>
-                    </div> -->
                 </div>
                 <div class="modal-footer">
                     <button @click="actions.confirmPurchase" class="btn-submit" :disabled="state.saving">
@@ -134,390 +182,686 @@
 </template>
 
 <script setup>
+import { computed, onMounted, nextTick } from 'vue';
 import { useAppStore } from '../store.js';
-const { state, constants, computedProps, helpers, actions } = useAppStore();
+const { state, constants, helpers, actions } = useAppStore();
+
+const parsedPlans = computed(() => {
+    if (!state.currentPurchasePlan || !state.currentPurchasePlan.plans) return [];
+    try {
+        return JSON.parse(state.currentPurchasePlan.plans);
+    } catch(e) {
+        return [];
+    }
+});
+
+const statusClass = computed(() => {
+    if (!state.currentPurchasePlan) return '';
+    if (state.currentPurchasePlan.status === '已购买') return 'status-purchased';
+    if (state.currentPurchasePlan.status === '取消') return 'status-cancelled';
+    return 'status-planned';
+});
+
+onMounted(() => {
+    nextTick(() => {
+        if (window.lucide) window.lucide.createIcons();
+    });
+});
 </script>
 
 <style scoped lang="scss">
-.expense-detail-container {
+$color-black: #111111;
+$color-white: #FAFAFA;
+$color-gray-100: rgba(17, 17, 17, 0.05);
+$color-gray-200: rgba(17, 17, 17, 0.1);
+$color-gray-500: rgba(17, 17, 17, 0.4);
+$color-gray-800: rgba(17, 17, 17, 0.8);
+
+.myhome-container {
     position: relative;
-    display: flex;
-    flex-direction: column;
-    padding-top: 4rem;
+    width: 100vw;
+    height: 100vh;
+    background-color: $color-white;
+    color: $color-black;
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
-.massive-bg-wrapper {
-    @include absolute-inset;
-    @include flex-center;
-    pointer-events: none;
-    user-select: none;
-    overflow: hidden;
+.hide-scrollbar {
+    &::-webkit-scrollbar { display: none; }
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.myhome-bg-layer {
+    position: absolute;
+    inset: 0;
     z-index: 0;
-    position: fixed;
+    background-color: $color-white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
 
     .massive-text {
-        font-size: 28vh;
+        font-size: 32vh;
         font-weight: 900;
-        color: rgba(0, 0, 0, 0.02);
-        letter-spacing: -0.05em;
+        color: $color-gray-100;
+        letter-spacing: -0.06em;
         white-space: nowrap;
-        transform: rotate(-90deg) scale(1.8);
-        transform-origin: center;
-
-        @media (min-width: 768px) {
+        transform: rotate(-90deg) scale(1.5);
+        user-select: none;
+        
+        @media (min-width: 640px) {
             transform: rotate(0deg) scale(1);
+            font-size: 28vh;
         }
     }
 }
 
-.detail-content {
-    position: relative;
+/* Glass Panel */
+.main-glass-panel {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
     z-index: 10;
-    max-width: 600px;
-    margin: 0 2rem;
-}
-
-.receipt-card {
-    @include glassmorphism(rgba(255, 255, 255, 0.9), 24px);
-    border-radius: 2rem;
-    padding: 2rem;
-    @include shadow-hover;
-    border: 1px solid rgba(0, 0, 0, 0.05);
-    margin-bottom: 1.5rem;
-    position: relative;
-    overflow: hidden;
-
-    .card-glow {
-        position: absolute;
-        right: -3rem;
-        top: -3rem;
-        width: 8rem;
-        height: 8rem;
-        border-radius: 50%;
-        opacity: 0.1;
-        filter: blur(24px);
-    }
-}
-
-.receipt-header {
+    background: rgba(250, 250, 250, 0.85);
+    backdrop-filter: blur(40px);
+    -webkit-backdrop-filter: blur(40px);
+    box-shadow: 0 30px 60px rgba(0,0,0,0.03);
+    border-bottom: 1px solid $color-gray-200;
     display: flex;
     flex-direction: column;
-    align-items: center;
+    border-radius: 0 0 2rem 2rem;
+    overflow: hidden;
+    transition: all 0.5s ease-out;
+
+    @media (min-width: 640px) {
+        width: 35%;
+        height: 100%;
+        border-radius: 0 2rem 2rem 0;
+        border-bottom: none;
+        border-right: 1px solid $color-gray-200;
+    }
+
+    .panel-content {
+        padding: 2.5rem 2rem 2rem;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        overflow-y: auto;
+
+        @media (min-width: 640px) {
+            padding: 5rem 3rem 3rem;
+        }
+    }
+}
+
+/* Typography inside Panel */
+.date-header {
     margin-bottom: 2.5rem;
-    position: relative;
-    z-index: 10;
-
-    .category-icon {
-        width: 4rem;
-        height: 4rem;
-        border-radius: 1rem;
-        @include flex-center;
-        margin-bottom: 1.5rem;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-
-        .icon-text {
-            font-size: 12px;
-            font-weight: 900;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-        }
-    }
-
-    .receipt-title {
-        font-size: 1.25rem; line-height: 1.75rem;
-        font-weight: 700;
-        text-align: center;
-        margin-bottom: 0.5rem;
-        color: $color-black;
-    }
-
-    .receipt-amount {
-        font-size: 3rem; line-height: 1;
-        font-weight: 900;
-        letter-spacing: -0.05em;
-        margin: 0.5rem 0;
-        color: $color-black;
-    }
-
-    .status-badge {
-        margin-top: 1rem;
+    margin-top: 2.5rem;
+    .category-label {
         font-size: 10px;
-        font-weight: 700;
+        color: $color-gray-500;
+        font-weight: 800;
+        letter-spacing: 0.15em;
         text-transform: uppercase;
-        letter-spacing: 0.1em;
-        padding: 0.375rem 1rem;
-        border-radius: 9999px;
+        margin-bottom: 0.75rem;
+    }
 
-        &.status-planned {
-            background-color: rgba(0, 0, 0, 0.05);
-            color: rgba(0, 0, 0, 0.6);
-        }
-        &.status-purchased {
-            background-color: rgba(52, 199, 89, 0.1);
-            color: #34c759;
-        }
-        &.status-cancelled {
-            background-color: rgba(255, 59, 48, 0.1);
-            color: #ff3b30;
+    .item-title {
+        font-size: 2.5rem;
+        line-height: 1.1;
+        font-weight: 900;
+        letter-spacing: -0.04em;
+        color: $color-black;
+        word-break: break-all;
+
+        @media (min-width: 640px) {
+            font-size: 3.5rem;
         }
     }
 }
 
-.divider {
-    width: 100%;
-    border-top: 1px dashed rgba(0, 0, 0, 0.1);
-    margin: 1.5rem 0;
-}
-
-.receipt-details {
+.info-block {
+    margin-bottom: 2.5rem;
     display: flex;
     flex-direction: column;
     gap: 1.25rem;
 
-    .detail-row {
+    .info-row {
         display: flex;
         justify-content: space-between;
         align-items: center;
+        border-bottom: 1px solid $color-gray-100;
+        padding-bottom: 1.25rem;
 
-        .detail-label {
-            font-size: 13px;
-            font-weight: 700;
-            color: rgba(0, 0, 0, 0.4);
+        &:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
         }
 
-        .detail-value {
-            font-size: 15px;
+        .label {
             font-weight: 700;
-            color: $color-black;
-        }
-    }
-
-    .notes-section {
-        padding-top: 1rem;
-
-        .notes-label {
-            display: block;
-            font-size: 13px;
-            font-weight: 700;
-            color: rgba(0, 0, 0, 0.4);
-            margin-bottom: 0.75rem;
+            color: $color-gray-500;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-size: 10px;
         }
 
-        .notes-content {
+        .value {
+            font-weight: 600;
+            color: $color-gray-800;
             font-size: 14px;
-            line-height: 1.6;
-            background-color: rgba(0, 0, 0, 0.05);
-            padding: 1rem;
-            border-radius: 1rem;
-            color: $color-black;
+
+            &.font-black {
+                font-weight: 900;
+                color: $color-black;
+                font-size: 16px;
+            }
+
+            &.status {
+                padding: 0.35rem 1rem;
+                border-radius: 9999px;
+                font-size: 10px;
+                font-weight: 800;
+                letter-spacing: 0.05em;
+                text-transform: uppercase;
+
+                &.status-planned { background-color: $color-gray-100; color: $color-gray-800; }
+                &.status-purchased { background-color: $color-black; color: $color-white; }
+                &.status-cancelled { background-color: transparent; border: 1px solid $color-gray-200; color: $color-gray-500; text-decoration: line-through; }
+            }
         }
     }
 }
 
-.action-buttons {
+.area-buttons {
     display: flex;
+    flex-direction: column;
     gap: 1rem;
+    margin-bottom: 1rem;
 
-    .btn-purchase {
-        flex: 1;
-        background-color: #34c759;
-        color: $color-white;
-        padding: 1rem 0;
-        border-radius: 9999px;
-        font-weight: 700;
-        font-size: 15px;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 6px -1px rgba(52, 199, 89, 0.3);
-
-        &:hover {
-            box-shadow: 0 10px 15px -3px rgba(52, 199, 89, 0.4);
-            transform: translateY(-2px);
-        }
-
-        &:active {
-            transform: scale(0.95);
-        }
-    }
-
-    .btn-edit {
-        flex: 1;
-        background-color: $color-black;
-        color: $color-white;
-        padding: 1rem 0;
-        border-radius: 9999px;
-        font-weight: 700;
-        font-size: 15px;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-
-        &:hover {
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
-            transform: translateY(-2px);
-        }
-
-        &:active {
-            transform: scale(0.95);
-        }
-    }
-
-    .btn-delete {
-        width: 4rem;
-        flex-shrink: 0;
-        background-color: $color-pure-white;
-        color: $color-danger;
-        border: 1px solid rgba(0, 0, 0, 0.05);
-        @include flex-center;
+    .area-btn {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.875rem 1.5rem;
         border-radius: 9999px;
         transition: all 0.3s ease;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        font-weight: 900;
-        font-size: 0.75rem; line-height: 1rem;
-
-        &:hover {
-            background-color: rgba($color-danger, 0.05);
-            border-color: rgba($color-danger, 0.2);
-        }
-
-        &:active {
-            transform: scale(0.95);
-        }
-    }
-}
-
-/* Modal Styles */
-.modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.4);
-    backdrop-filter: blur(4px);
-    z-index: 100;
-    display: flex;
-    align-items: flex-end;
-    @media (min-width: 768px) { align-items: center; justify-content: center; }
-}
-
-.modal-content {
-    background: #fff;
-    width: 100%;
-    max-width: 500px;
-    border-radius: 2rem 2rem 0 0;
-    padding: 2rem;
-    @media (min-width: 768px) { border-radius: 2rem; }
-}
-
-.modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1.5rem;
-    h3 { font-size: 1.25rem; font-weight: 800; color: #111; }
-    .btn-close { 
-        font-size: 1.5rem; opacity: 0.5; cursor: pointer; 
-        transition: opacity 0.3s;
-        &:hover { opacity: 1; }
-    }
-}
-
-.modal-footer {
-    margin-top: 2rem;
-    .btn-submit {
-        width: 100%;
-        background: #111;
-        color: #fff;
-        padding: 1rem;
-        border-radius: 9999px;
-        font-weight: 800;
-        font-size: 16px;
-        transition: transform 0.2s;
-        &:active { transform: scale(0.98); }
-        &:disabled { opacity: 0.5; cursor: not-allowed; }
-    }
-}
-
-.form-fields {
-    display: flex;
-    flex-direction: column;
-    gap: 1.25rem;
-}
-
-.form-group {
-    display: flex;
-    flex-direction: column;
-    
-    .field-label {
-        display: block;
-        font-size: 11px;
-        font-weight: 700;
-        color: rgba(0, 0, 0, 0.4);
-        text-transform: uppercase;
-        letter-spacing: 0.1em;
-        margin-bottom: 0.75rem;
-        margin-left: 0.25rem;
-    }
-}
-
-.form-input, .form-select {
-    width: 100%;
-    background-color: rgba(0,0,0,0.03);
-    color: $color-black;
-    font-size: 15px;
-    font-weight: 700;
-    padding: 1rem 1.25rem;
-    border-radius: 2rem;
-    outline: none;
-    border: 1px solid transparent;
-    transition: all 0.3s ease;
-
-    &:focus {
-        background-color: #fff;
-        border-color: rgba(0,0,0,0.1);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-    }
-}
-
-.form-select {
-    appearance: none;
-    cursor: pointer;
-}
-
-.select-wrapper {
-    position: relative;
-    .select-arrow {
-        position: absolute;
-        right: 1.25rem;
-        top: 50%;
-        transform: translateY(-50%);
-        font-size: 10px;
-        color: rgba(0, 0, 0, 0.4);
-        pointer-events: none;
-    }
-}
-
-.chip-group {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-
-    .chip {
-        background-color: rgba(0,0,0,0.03);
-        padding: 0.75rem 1.25rem;
-        border-radius: 9999px;
-        font-size: 14px;
-        font-weight: 700;
-        color: rgba(0, 0, 0, 0.6);
         cursor: pointer;
-        transition: all 0.3s ease;
-        user-select: none;
 
-        &:hover {
-            background-color: rgba(0,0,0,0.06);
+        .btn-left {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+
+            .label {
+                font-weight: 800;
+                font-size: 12px;
+                letter-spacing: 0.05em;
+                text-transform: uppercase;
+            }
         }
 
-        &.active {
+        .btn-icon {
+            width: 2.25rem;
+            height: 2.25rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+
+            i {
+                width: 1rem;
+                height: 1rem;
+                transition: all 0.3s ease;
+            }
+        }
+
+        &.purchase-btn {
             background-color: $color-black;
             color: $color-white;
-            transform: scale(1.05);
+            border: 1px solid $color-black;
+            
+            .btn-icon { background-color: rgba(255,255,255,0.15); i { color: $color-white; } }
+            
+            &:hover { 
+                background-color: transparent; 
+                color: $color-black;
+                .btn-icon { background-color: $color-gray-100; i { color: $color-black; transform: scale(1.1); } }
+            }
         }
+    }
+}
+
+.logo-bottom {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+    margin-top: auto;
+
+    .brand-icon {
+        width: 1.5rem;
+        height: 1.5rem;
+        color: $color-black;
+        opacity: 0.2;
+    }
+
+    .logo-text {
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 0.15em;
+        color: $color-gray-500;
+        text-transform: uppercase;
+    }
+}
+
+/* Plans Area */
+.plans-area {
+        position: relative;
+    left: 0;
+    width: 100%;
+    height: 55%;
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+
+    @media (min-width: 640px) {
+        top: 0;
+        left: 35%;
+        width: 65%;
+        height: 100%;
+    }
+}
+
+.right-top-text {
+    z-index: 10;
+    text-align: right;
+
+    @media (min-width: 640px) {
+        top: 4rem;
+        right: 4rem;
+    }
+
+    .title {
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        color: $color-black;
+        text-transform: uppercase;
+    }
+
+    .subtitle {
+        font-size: 12px;
+        color: $color-gray-500;
+        font-weight: 600;
+        margin-top: 0.25rem;
+    }
+}
+
+.plans-scroll-container {
+    width: 100%;
+    margin-top: 1.5rem;
+    
+    .plans-scroll-track {
+        display: flex;
+        gap: 1.5rem;
+        padding: 0 2rem;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        padding-bottom: 3rem; /* space for shadow */
+    }
+
+    .empty-state-card {
+        scroll-snap-align: center;
+        flex: 0 0 85vw;
+        max-width: 400px;
+        background: transparent;
+        border: 1px dashed $color-gray-200;
+        border-radius: 2rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+        min-height: 300px;
+
+        .empty-icon { width: 2rem; height: 2rem; color: $color-gray-500; opacity: 0.5; }
+        .empty-text { font-size: 12px; font-weight: 700; color: $color-gray-500; letter-spacing: 0.1em; text-transform: uppercase; }
+    }
+
+    .plan-swipe-card {
+        scroll-snap-align: center;
+        flex: 0 0 85vw;
+        max-width: 400px;
+        background: rgba(250, 250, 250, 0.9);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border-radius: 2rem;
+        padding: 2rem;
+        border: 1px solid $color-gray-100;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.04);
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+        transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        max-height: 50vh;
+        overflow-y: auto;
+
+        @media (min-width: 640px) {
+            max-height: 65vh;
+        }
+
+        &:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.08);
+        }
+
+        &.is-active-plan {
+            background: #ffffff;
+            border: 2px solid $color-black;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.1);
+        }
+
+        .plan-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+
+            .plan-name-group {
+                display: flex;
+                flex-direction: column;
+                gap: 0.5rem;
+
+                .active-indicator {
+                    font-size: 10px;
+                    font-weight: 800;
+                    color: $color-black;
+                    background: $color-gray-100;
+                    padding: 0.25rem 0.75rem;
+                    border-radius: 9999px;
+                    text-transform: uppercase;
+                    letter-spacing: 0.1em;
+                    width: fit-content;
+                }
+
+                .plan-name {
+                    font-size: 1.5rem;
+                    font-weight: 900;
+                    color: $color-black;
+                    letter-spacing: -0.02em;
+                }
+            }
+
+            .plan-price {
+                font-size: 1.5rem;
+                font-weight: 900;
+                letter-spacing: -0.05em;
+                color: $color-black;
+
+                &.empty {
+                    font-size: 1rem;
+                    color: $color-gray-500;
+                    font-weight: 700;
+                }
+            }
+        }
+
+        .plan-details-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+
+            .grid-item {
+                display: flex;
+                flex-direction: column;
+                gap: 0.5rem;
+
+                &.full-width {
+                    grid-column: span 2;
+                }
+
+                .grid-label {
+                    font-size: 10px;
+                    font-weight: 800;
+                    color: $color-gray-500;
+                    text-transform: uppercase;
+                    letter-spacing: 0.1em;
+                }
+
+                .grid-value {
+                    font-size: 14px;
+                    font-weight: 600;
+                    color: $color-black;
+                    word-break: break-all;
+                    line-height: 1.5;
+
+                    &.empty {
+                        color: $color-gray-500;
+                        font-weight: 500;
+                    }
+
+                    &.link {
+                        color: $color-black;
+                        text-decoration: none;
+                        background: $color-gray-100;
+                        padding: 0.5rem 1rem;
+                        border-radius: 9999px;
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 0.5rem;
+                        width: fit-content;
+                        font-size: 12px;
+                        font-weight: 700;
+                        transition: background-color 0.2s;
+
+                        &:hover { background: $color-gray-200; }
+
+                        .inline-icon { width: 12px; height: 12px; }
+                    }
+
+                    &.notes {
+                        font-weight: 500;
+                        color: $color-gray-800;
+                        background: $color-gray-100;
+                        padding: 1rem;
+                        border-radius: 1rem;
+                    }
+                }
+            }
+        }
+
+        .plan-images {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+
+            .grid-label {
+                font-size: 10px;
+                font-weight: 800;
+                color: $color-gray-500;
+                text-transform: uppercase;
+                letter-spacing: 0.1em;
+            }
+
+            .image-row {
+                display: flex;
+                gap: 0.75rem;
+                overflow-x: auto;
+                padding-bottom: 0.5rem;
+
+                .plan-img {
+                    width: 4.5rem;
+                    height: 4.5rem;
+                    object-fit: cover;
+                    border-radius: 1rem;
+                    flex-shrink: 0;
+                    cursor: pointer;
+                    transition: transform 0.2s;
+
+                    &:hover { transform: scale(1.05); }
+                }
+            }
+
+            .empty {
+                font-size: 14px;
+                font-weight: 500;
+                color: $color-gray-500;
+            }
+        }
+    }
+}
+
+/* Floating Actions */
+.right-bottom-actions {
+    position: absolute;
+    bottom: 2rem;
+    right: 2rem;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+
+    @media (min-width: 640px) {
+        bottom: 4rem;
+        right: 4rem;
+    }
+
+    .delete-float-btn {
+        height: 3.5rem;
+        padding-left: 1.5rem;
+        padding-right: 0.5rem;
+        border-radius: 9999px;
+        background-color: transparent;
+        border: 1px solid $color-gray-200;
+        color: $color-black;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        transition: all 0.3s ease;
+
+        &:hover {
+            transform: translateY(-4px) scale(1.02);
+            background-color: $color-gray-100;
+            border-color: transparent;
+            .icon-wrap { background-color: $color-white; }
+        }
+
+        .label {
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        .icon-wrap {
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 50%;
+            background-color: $color-gray-100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+
+            i { width: 1.25rem; height: 1.25rem; }
+        }
+    }
+
+    .edit-btn {
+        height: 3.5rem;
+        padding-left: 1.5rem;
+        padding-right: 0.5rem;
+        border-radius: 9999px;
+        background-color: $color-black;
+        color: $color-white;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        transition: all 0.3s ease;
+
+        &:hover {
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 25px 50px rgba(0,0,0,0.2);
+            .icon-wrap { background-color: rgba(255, 255, 255, 0.2); }
+        }
+
+        .label {
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        .icon-wrap {
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.3s;
+
+            i { width: 1.25rem; height: 1.25rem; }
+        }
+    }
+}
+
+/* Modal styles */
+.modal-overlay {
+    position: fixed; inset: 0; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); z-index: 100; display: flex; align-items: flex-end;
+    @media (min-width: 768px) { align-items: center; justify-content: center; }
+}
+.modal-content {
+    background: #ffffff; width: 100%; max-width: 500px; border-radius: 2rem 2rem 0 0; padding: 2.5rem; box-shadow: 0 -20px 60px rgba(0,0,0,0.05);
+    @media (min-width: 768px) { border-radius: 2rem; box-shadow: 0 30px 60px rgba(0,0,0,0.1); }
+}
+.modal-header {
+    display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;
+    h3 { font-size: 1.5rem; font-weight: 900; color: $color-black; letter-spacing: -0.02em; }
+    .btn-close { 
+        width: 2.5rem; height: 2.5rem; border-radius: 50%; background: $color-gray-100; display: flex; align-items: center; justify-content: center; color: $color-black; cursor: pointer; transition: all 0.2s; 
+        &:hover { background: $color-gray-200; transform: scale(1.05); } 
+        i { width: 1.25rem; height: 1.25rem; }
+    }
+}
+.form-fields { display: flex; flex-direction: column; gap: 1.5rem; }
+.form-group {
+    display: flex; flex-direction: column;
+    .field-label { display: block; font-size: 10px; font-weight: 800; color: $color-gray-500; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.75rem; margin-left: 0.5rem; }
+}
+.form-input {
+    width: 100%; background-color: $color-gray-100; color: $color-black; font-size: 16px; font-weight: 700; padding: 1.25rem 1.5rem; border-radius: 1.5rem; outline: none; border: 1px solid transparent; transition: all 0.3s ease;
+    &::placeholder { color: $color-gray-500; font-weight: 500; }
+    &:focus { background-color: #fff; border-color: $color-gray-200; box-shadow: 0 10px 30px rgba(0,0,0,0.05); transform: translateY(-2px); }
+}
+.chip-group {
+    display: flex; flex-wrap: wrap; gap: 0.75rem;
+    .chip { 
+        background-color: $color-gray-100; padding: 0.875rem 1.5rem; border-radius: 9999px; font-size: 13px; font-weight: 700; color: $color-gray-800; cursor: pointer; transition: all 0.2s ease; user-select: none; border: 1px solid transparent;
+        &:hover { background-color: $color-gray-200; }
+        &.active { background-color: $color-black; color: $color-white; border-color: $color-black; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+    }
+}
+.modal-footer {
+    margin-top: 2.5rem;
+    .btn-submit { 
+        width: 100%; background: $color-black; color: $color-white; padding: 1.25rem; border-radius: 9999px; font-weight: 800; font-size: 14px; letter-spacing: 0.1em; text-transform: uppercase; transition: all 0.2s; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        &:hover { transform: translateY(-2px); box-shadow: 0 15px 40px rgba(0,0,0,0.2); }
+        &:active { transform: scale(0.98); } 
+        &:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; } 
     }
 }
 </style>
+

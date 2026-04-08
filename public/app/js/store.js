@@ -269,7 +269,7 @@ const actions = {
                 state.purchasePlanForm = {
                     item_name: '', category_id: state.categories.length ? state.categories[0].id : '',
                     purchase_method: '其他', decoration_area: params?.area || '',
-                    estimated_budget: null, actual_price: null, merchant_name: '', product_link: '', status: '计划', notes: '', image_urls: '[]'
+                    estimated_budget: null, actual_price: null, merchant_name: '', product_link: '', status: '计划', notes: '', image_urls: '[]', plans: '[]', selected_plan_id: null
                 };
                 state.purchasePlanImagesPreview = [];
             }
@@ -504,9 +504,9 @@ const actions = {
         try {
             const payload = { 
                 ...state.purchasePlanForm, 
-                estimated_budget: state.purchasePlanForm.estimated_budget ? parseFloat(state.purchasePlanForm.estimated_budget) : null,
-                image_urls: JSON.stringify(state.purchasePlanImagesPreview)
+                estimated_budget: state.purchasePlanForm.estimated_budget ? parseFloat(state.purchasePlanForm.estimated_budget) : null
             };
+            
             let res = payload.id ? await axios.put(`/api/purchase-plans/${payload.id}`, payload) : await axios.post('/api/purchase-plans', payload);
             if (res.data.success) actions.goBack();
         } catch (error) { alert('保存失败，请重试'); console.error(error); } finally { state.saving = false; }
@@ -521,7 +521,7 @@ const actions = {
     openPurchaseModal: () => {
         if (!state.categories.length) actions.fetchCategories();
         state.purchaseModal.data = {
-            actual_price: state.currentPurchasePlan?.estimated_budget || null,
+            actual_price: state.currentPurchasePlan?.actual_price || state.currentPurchasePlan?.estimated_budget || null,
             payer_names: '',
             payment_method: 'wechat',
             category_id: state.categories.length ? state.categories[0].id : ''

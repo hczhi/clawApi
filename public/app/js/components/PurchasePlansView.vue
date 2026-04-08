@@ -62,8 +62,8 @@
                                     </div>
                                 </div>
                                 <div class="card-right">
-                                    <p class="card-amount" v-if="plan.status === '已购买'">¥{{ helpers.formatAmount(plan.actual_price) }}</p>
-                                    <p class="card-amount" v-else style="color: #888; font-size: 14px;">预算: ¥{{ helpers.formatAmount(plan.estimated_budget) }}</p>
+                                    <p class="card-amount" v-if="plan.actual_price">¥{{ helpers.formatAmount(plan.actual_price) }}</p>
+                                    <p class="card-amount" v-else style="color: #888; font-size: 14px;">未报价</p>
                                     <span class="status-badge" :class="plan.status === '已购买' ? 'status-purchased' : (plan.status === '取消' ? 'status-cancelled' : 'status-planned')">{{ plan.status }}</span>
                                 </div>
                             </div>
@@ -95,12 +95,7 @@ const groupedPlans = computed(() => {
 
 const totalPurchaseAmount = computed(() => {
     return state.purchasePlans.reduce((sum, plan) => {
-        if (plan.status === '已购买') {
-            return sum + parseFloat(plan.actual_price || 0);
-        } else if (plan.status === '计划') {
-            return sum + parseFloat(plan.estimated_budget || 0);
-        }
-        return sum;
+        return sum + parseFloat(plan.actual_price || 0);
     }, 0);
 });
 </script>

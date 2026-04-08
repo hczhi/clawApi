@@ -133,7 +133,7 @@ router.get('/:id', (req, res) => {
  */
 router.post('/', (req, res) => {
   try {
-    const { item_name, category_id, purchase_method, decoration_area, estimated_budget, actual_price, merchant_name, product_link, status, notes, image_urls } = req.body;
+    const { item_name, category_id, purchase_method, decoration_area, estimated_budget, actual_price, merchant_name, product_link, status, notes, image_urls, plans, selected_plan_id } = req.body;
     
     if (!item_name || !category_id) {
       return res.status(400).json({ success: false, error: '物品名称和分类不能为空' });
@@ -141,9 +141,9 @@ router.post('/', (req, res) => {
     
     const result = db.run(`
       INSERT INTO purchase_plans 
-      (item_name, category_id, purchase_method, decoration_area, estimated_budget, actual_price, merchant_name, product_link, status, notes, image_urls)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `, [item_name, category_id, purchase_method || '其他', decoration_area || null, estimated_budget || null, actual_price || null, merchant_name || null, product_link || null, status || '计划', notes || null, image_urls || null]);
+      (item_name, category_id, purchase_method, decoration_area, estimated_budget, actual_price, merchant_name, product_link, status, notes, image_urls, plans, selected_plan_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [item_name, category_id, purchase_method || '其他', decoration_area || null, estimated_budget || null, actual_price || null, merchant_name || null, product_link || null, status || '计划', notes || null, image_urls || null, plans || '[]', selected_plan_id || null]);
     
     const newPlan = db.get(`
       SELECT *
@@ -163,7 +163,7 @@ router.post('/', (req, res) => {
 router.put('/:id', (req, res) => {
   try {
     const { id } = req.params;
-    const { item_name, category_id, purchase_method, decoration_area, estimated_budget, actual_price, merchant_name, product_link, status, notes, image_urls } = req.body;
+    const { item_name, category_id, purchase_method, decoration_area, estimated_budget, actual_price, merchant_name, product_link, status, notes, image_urls, plans, selected_plan_id } = req.body;
     
     const existing = db.get('SELECT * FROM purchase_plans WHERE id = ?', [id]);
     if (!existing) {
@@ -183,9 +183,11 @@ router.put('/:id', (req, res) => {
           status = COALESCE(?, status),
           notes = COALESCE(?, notes),
           image_urls = COALESCE(?, image_urls),
+          plans = COALESCE(?, plans),
+          selected_plan_id = COALESCE(?, selected_plan_id),
           updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
-    `, [item_name, category_id, purchase_method, decoration_area, estimated_budget, actual_price, merchant_name, product_link, status, notes, image_urls, id]);
+    `, [item_name, category_id, purchase_method, decoration_area, estimated_budget, actual_price, merchant_name, product_link, status, notes, image_urls, plans, selected_plan_id, id]);
     
     const updated = db.get(`
       SELECT *

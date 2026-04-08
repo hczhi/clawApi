@@ -124,6 +124,8 @@ CREATE TABLE IF NOT EXISTS purchase_plans (
     product_link TEXT,
     image_urls TEXT,
     status TEXT CHECK(status IN ('计划', '已购买', '取消')) DEFAULT '计划',
+    plans TEXT DEFAULT '[]',
+    selected_plan_id TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     notes TEXT

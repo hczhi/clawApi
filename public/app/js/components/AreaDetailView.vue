@@ -136,8 +136,8 @@
                                     </div>
                                 </div>
                                 <div class="item-right">
-                                    <div class="item-amount" v-if="plan.status === '已购买'" style="color: #34c759;">¥{{ helpers.formatAmount(plan.actual_price) }}</div>
-                                    <div class="item-amount" v-else style="color: #888; font-size: 14px;">¥{{ helpers.formatAmount(plan.estimated_budget) }}</div>
+                                    <div class="item-amount" v-if="plan.actual_price" :style="{color: plan.status === '已购买' ? '#34c759' : '#111'}">¥{{ helpers.formatAmount(plan.actual_price) }}</div>
+                                    <div class="item-amount" v-else style="color: #888; font-size: 14px;">未报价</div>
                                     <div class="item-method" :style="{color: plan.status === '已购买' ? '#34c759' : (plan.status === '取消' ? '#ff3b30' : '#111')}">{{ plan.status }}</div>
                                 </div>
                             </div>
