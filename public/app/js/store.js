@@ -38,8 +38,10 @@ const state = reactive({
         status: 'paid',
         notes: '',
         payer_names: '',
-        decoration_area: ''
+        decoration_area: '',
+        image_urls: '[]'
     },
+    expenseImagesPreview: [],
 
     conceptForm: {
         title: '',
@@ -49,6 +51,37 @@ const state = reactive({
         reference_link: '',
         image_urls: '[]',
         decoration_area: ''
+    },
+
+    purchasePlans: [],
+    currentPurchasePlan: null,
+    purchasePlanForm: {
+        item_name: '',
+        category_id: '',
+        purchase_method: '其他',
+        decoration_area: '',
+        estimated_budget: null,
+        actual_price: null,
+        merchant_name: '',
+        product_link: '',
+        status: '计划',
+        notes: '',
+        image_urls: '[]'
+    },
+    purchasePlanImagesPreview: [],
+    purchaseModal: {
+        show: false,
+        data: {
+            actual_price: null,
+            payer_names: '',
+            payment_method: 'wechat',
+            category_id: ''
+        }
+    },
+
+    previewModal: {
+        show: false,
+        imageUrl: ''
     },
 
     scrolled: false,
@@ -79,6 +112,13 @@ const constants = {
         { label: '小红书', value: 'xiaohongshu' },
         { label: '好好住', value: 'haozhu' },
         { label: '其他', value: 'other' }
+    ],
+    purchaseCategories: [
+        '硬装',
+        '家具',
+        '家电',
+        '装饰',
+        '其他'
     ]
 };
 
@@ -93,6 +133,9 @@ const computedProps = {
             'concepts': '灵感收集',
             'concept-detail': '灵感详情',
             'concept-form': state.conceptForm.id ? '编辑灵感' : '添加灵感',
+            'purchase-plans': '购买清单',
+            'purchase-plan-detail': '清单详情',
+            'purchase-plan-form': state.purchasePlanForm.id ? '编辑清单' : '添加清单',
             'assistant': 'AI 助手',
             'myhome': '',
             'edit-home': '编辑户型',
@@ -109,6 +152,9 @@ const computedProps = {
             'concepts': 'ConceptsView',
             'concept-detail': 'ConceptDetailView',
             'concept-form': 'ConceptFormView',
+            'purchase-plans': 'PurchasePlansView',
+            'purchase-plan-detail': 'PurchasePlanDetailView',
+            'purchase-plan-form': 'PurchasePlanFormView',
             'assistant': 'AssistantView',
             'myhome': 'MyHomeView',
             'edit-home': 'EditHomeView',
@@ -142,7 +188,7 @@ const helpers = {
         } catch(e) { return null; }
     },
     getCategoryConfig: (categoryName) => {
-        const name = categoryName || '';
+        const name = categoryName ? String(categoryName) : '';
         if (name.includes('硬装') || name.includes('水电') || name.includes('泥瓦')) return { icon: 'hammer', colorClass: 'bg-[#007aff]/10 text-[#007aff]', bgClass: 'bg-[#007aff]' };
         if (name.includes('软装') || name.includes('家具')) return { icon: 'sofa', colorClass: 'bg-[#ff9500]/10 text-[#ff9500]', bgClass: 'bg-[#ff9500]' };
         if (name.includes('设备') || name.includes('家电')) return { icon: 'tv', colorClass: 'bg-[#34c759]/10 text-[#34c759]', bgClass: 'bg-[#34c759]' };
@@ -174,12 +220,16 @@ const actions = {
                 const exp = state.expenses.find(e => e.id === params.id) || state.currentExpense;
                 if (exp) {
                     state.formData = { ...exp, payment_date: dayjs(exp.payment_date).format('YYYY-MM-DD') };
+                    try {
+                        state.expenseImagesPreview = JSON.parse(exp.image_urls || '[]');
+                    } catch(e) { state.expenseImagesPreview = []; }
                 }
             } else {
                 state.formData = {
                     title: '', amount: null, category_id: state.categories.length ? state.categories[0].id : '',
-                    payment_date: dayjs().format('YYYY-MM-DD'), payment_method: 'wechat', status: 'paid', notes: '', payer_names: '', decoration_area: params?.area || ''
+                    payment_date: dayjs().format('YYYY-MM-DD'), payment_method: 'wechat', status: 'paid', notes: '', payer_names: '', decoration_area: params?.area || '', image_urls: '[]'
                 };
+                state.expenseImagesPreview = [];
             }
         } else if (view === 'expenses') {
             actions.fetchExpenses();
@@ -202,6 +252,27 @@ const actions = {
                 };
                 state.conceptImagesPreview = [];
             }
+        } else if (view === 'purchase-plans') {
+            actions.fetchPurchasePlans();
+        } else if (view === 'purchase-plan-detail' && params?.id) {
+            actions.fetchPurchasePlanDetail(params.id);
+        } else if (view === 'purchase-plan-form') {
+            if (params?.mode === 'edit' && params?.id) {
+                const plan = state.purchasePlans.find(p => p.id === params.id) || state.currentPurchasePlan;
+                if (plan) {
+                    state.purchasePlanForm = { ...plan };
+                    try {
+                        state.purchasePlanImagesPreview = JSON.parse(plan.image_urls || '[]');
+                    } catch(e) { state.purchasePlanImagesPreview = []; }
+                }
+            } else {
+                state.purchasePlanForm = {
+                    item_name: '', category_id: state.categories.length ? state.categories[0].id : '',
+                    purchase_method: '其他', decoration_area: params?.area || '',
+                    estimated_budget: null, actual_price: null, merchant_name: '', product_link: '', status: '计划', notes: '', image_urls: '[]'
+                };
+                state.purchasePlanImagesPreview = [];
+            }
         } else if (view === 'myhome' || view === 'edit-home') {
             actions.fetchFloorPlan();
         } else if (view === 'area-detail' && params?.area) {
@@ -220,9 +291,11 @@ const actions = {
             
             if (previousView === 'expenses') actions.fetchExpenses();
             if (previousView === 'concepts') actions.fetchConcepts();
+            if (previousView === 'purchase-plans') actions.fetchPurchasePlans();
             if (previousView === 'home') actions.fetchHomeData();
             if (previousView === 'concept-detail' && state.currentConcept) actions.fetchConceptDetail(state.currentConcept.id);
             if (previousView === 'expense-detail' && state.currentExpense) actions.fetchExpenseDetail(state.currentExpense.id);
+            if (previousView === 'purchase-plan-detail' && state.currentPurchasePlan) actions.fetchPurchasePlanDetail(state.currentPurchasePlan.id);
             
             state.currentView = previousView;
             helpers.updateIcons();
@@ -291,7 +364,11 @@ const actions = {
         if (!state.formData.amount || !state.formData.title) return;
         state.saving = true;
         try {
-            const payload = { ...state.formData, amount: parseFloat(state.formData.amount) };
+            const payload = { 
+                ...state.formData, 
+                amount: parseFloat(state.formData.amount),
+                image_urls: JSON.stringify(state.expenseImagesPreview)
+            };
             let res = payload.id ? await axios.put(`/api/expenses/${payload.id}`, payload) : await axios.post('/api/expenses', payload);
             if (res.data.success) actions.goBack();
         } catch (error) { alert('保存失败，请重试'); console.error(error); } finally { state.saving = false; }
@@ -319,22 +396,179 @@ const actions = {
             if (res.data.success) actions.goBack();
         } catch (error) { alert('删除失败，请重试'); }
     },
+    processImagesToFormData: async (files) => {
+        const formData = new FormData();
+        for (let i = 0; i < files.length; i++) {
+            let file = files[i];
+            if (file.name.toLowerCase().endsWith('.heic') || file.type === 'image/heic') {
+                try {
+                    const convertedBlob = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.8 });
+                    const blobToAppend = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+                    file = new File([blobToAppend], file.name.replace(/\.heic$/i, '.jpg'), { type: 'image/jpeg' });
+                } catch (e) {
+                    console.error('HEIC conversion failed:', e);
+                }
+            }
+            formData.append('images', file);
+        }
+        return formData;
+    },
     handleConceptImageUpload: async (event) => {
         const files = event.target.files;
         if (!files || files.length === 0) return;
         if (state.conceptImagesPreview.length + files.length > 5) { alert('最多只能上传 5 张图片'); return; }
         
-        const formData = new FormData();
-        for (let i = 0; i < files.length; i++) formData.append('images', files[i]);
-        
         state.uploadingImages = true;
         try {
+            const formData = await actions.processImagesToFormData(files);
             const res = await axios.post('/api/design-concepts/upload', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
-            if (res.data.success) state.conceptImagesPreview.push(...res.data.data.urls);
+            if (res.data.success) {
+                state.conceptImagesPreview.push(...res.data.data.urls);
+                state.conceptForm.image_urls = JSON.stringify(state.conceptImagesPreview);
+            }
         } catch (error) { alert('图片上传失败: ' + (error.response?.data?.error || error.message)); } 
         finally { state.uploadingImages = false; event.target.value = ''; }
     },
-    removeConceptImage: (index) => state.conceptImagesPreview.splice(index, 1),
+    removeConceptImage: (index) => {
+        state.conceptImagesPreview.splice(index, 1);
+        state.conceptForm.image_urls = JSON.stringify(state.conceptImagesPreview);
+    },
+    handleExpenseImageUpload: async (event) => {
+        const files = event.target.files;
+        if (!files || files.length === 0) return;
+        if (state.expenseImagesPreview.length + files.length > 5) { alert('最多只能上传 5 张图片'); return; }
+        
+        state.uploadingImages = true;
+        try {
+            const formData = await actions.processImagesToFormData(files);
+            const res = await axios.post('/api/expenses/upload', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+            if (res.data.success) {
+                state.expenseImagesPreview.push(...res.data.data.urls);
+                state.formData.image_urls = JSON.stringify(state.expenseImagesPreview);
+            }
+        } catch (error) { alert('图片上传失败: ' + (error.response?.data?.error || error.message)); } 
+        finally { state.uploadingImages = false; event.target.value = ''; }
+    },
+    removeExpenseImage: (index) => {
+        state.expenseImagesPreview.splice(index, 1);
+        state.formData.image_urls = JSON.stringify(state.expenseImagesPreview);
+    },
+    handlePurchasePlanImageUpload: async (event) => {
+        const files = event.target.files;
+        if (!files || files.length === 0) return;
+        if (state.purchasePlanImagesPreview.length + files.length > 5) { alert('最多只能上传 5 张图片'); return; }
+        
+        state.uploadingImages = true;
+        try {
+            const formData = await actions.processImagesToFormData(files);
+            const res = await axios.post('/api/purchase-plans/upload', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+            if (res.data.success) {
+                state.purchasePlanImagesPreview.push(...res.data.data.urls);
+                state.purchasePlanForm.image_urls = JSON.stringify(state.purchasePlanImagesPreview);
+            }
+        } catch (error) { alert('图片上传失败: ' + (error.response?.data?.error || error.message)); } 
+        finally { state.uploadingImages = false; event.target.value = ''; }
+    },
+    removePurchasePlanImage: (index) => {
+        state.purchasePlanImagesPreview.splice(index, 1);
+        state.purchasePlanForm.image_urls = JSON.stringify(state.purchasePlanImagesPreview);
+    },
+    fetchPurchasePlans: async () => {
+        state.loading = true;
+        try {
+            const res = await axios.get('/api/purchase-plans', { params: { limit: 50 } });
+            if (res.data.success) {
+                state.purchasePlans = res.data.data;
+            }
+        } catch (error) { console.error('Failed to fetch purchase plans:', error); } finally { state.loading = false; }
+    },
+    fetchPurchasePlanDetail: async (id) => {
+        try {
+            const res = await axios.get(`/api/purchase-plans/${id}`);
+            if (res.data.success) {
+                state.currentPurchasePlan = res.data.data;
+                helpers.updateIcons();
+            }
+        } catch (error) { console.error('Failed to fetch purchase plan detail:', error); }
+    },
+    savePurchasePlan: async () => {
+        if (!state.purchasePlanForm.item_name || !state.purchasePlanForm.category_id) {
+            alert('请填写物品名称和分类');
+            return;
+        }
+        if (state.purchasePlanForm.status === '已购买' && !state.purchasePlanForm.actual_price) {
+            alert('已购买状态必须填写付款金额');
+            return;
+        }
+        state.saving = true;
+        try {
+            const payload = { 
+                ...state.purchasePlanForm, 
+                estimated_budget: state.purchasePlanForm.estimated_budget ? parseFloat(state.purchasePlanForm.estimated_budget) : null,
+                image_urls: JSON.stringify(state.purchasePlanImagesPreview)
+            };
+            let res = payload.id ? await axios.put(`/api/purchase-plans/${payload.id}`, payload) : await axios.post('/api/purchase-plans', payload);
+            if (res.data.success) actions.goBack();
+        } catch (error) { alert('保存失败，请重试'); console.error(error); } finally { state.saving = false; }
+    },
+    deletePurchasePlan: async () => {
+        if (!state.currentPurchasePlan || !confirm('确定要删除这个购买清单吗？')) return;
+        try {
+            const res = await axios.delete(`/api/purchase-plans/${state.currentPurchasePlan.id}`);
+            if (res.data.success) actions.goBack();
+        } catch (error) { alert('删除失败，请重试'); }
+    },
+    openPurchaseModal: () => {
+        if (!state.categories.length) actions.fetchCategories();
+        state.purchaseModal.data = {
+            actual_price: state.currentPurchasePlan?.estimated_budget || null,
+            payer_names: '',
+            payment_method: 'wechat',
+            category_id: state.categories.length ? state.categories[0].id : ''
+        };
+        state.purchaseModal.show = true;
+        helpers.updateIcons();
+    },
+    closePurchaseModal: () => {
+        state.purchaseModal.show = false;
+    },
+    confirmPurchase: async () => {
+        const plan = state.currentPurchasePlan;
+        const modalData = state.purchaseModal.data;
+        if (!modalData.actual_price || !modalData.category_id) {
+            alert('请填写实际金额和费用分类');
+            return;
+        }
+        
+        state.saving = true;
+        try {
+            await axios.put(`/api/purchase-plans/${plan.id}`, {
+                ...plan,
+                status: '已购买',
+                actual_price: parseFloat(modalData.actual_price)
+            });
+            
+            await axios.post('/api/expenses', {
+                category_id: modalData.category_id,
+                title: plan.item_name,
+                amount: parseFloat(modalData.actual_price),
+                payment_method: modalData.payment_method,
+                payer_names: modalData.payer_names,
+                payment_date: dayjs().format('YYYY-MM-DD'),
+                decoration_area: plan.decoration_area,
+                notes: `由购买清单“${plan.item_name}”自动生成`,
+                image_urls: plan.image_urls || '[]'
+            });
+            
+            await actions.fetchPurchasePlanDetail(plan.id);
+            actions.closePurchaseModal();
+        } catch (error) {
+            console.error(error);
+            alert('操作失败，请重试');
+        } finally {
+            state.saving = false;
+        }
+    },
     fetchFloorPlan: async () => {
         try {
             const res = await axios.get('/api/floor-plans');
@@ -360,6 +594,16 @@ const actions = {
         } finally {
             state.saving = false;
         }
+    },
+    previewImage: (url) => {
+        state.previewModal.imageUrl = url;
+        state.previewModal.show = true;
+    },
+    closePreviewModal: () => {
+        state.previewModal.show = false;
+        setTimeout(() => {
+            state.previewModal.imageUrl = '';
+        }, 300);
     }
 };
 

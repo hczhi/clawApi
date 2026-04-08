@@ -3,15 +3,23 @@
         <!-- Huge Background Text -->
         <div class="massive-bg-wrapper">
             <span class="massive-text">
-                EXPENSES
+                PURCHASES
             </span>
         </div>
         
         <!-- Premium Header Area -->
-        <div class="expenses-header animate-fade-in-up">
-            <p class="header-subtitle">累计投入</p>
-            <div class="header-amount">
-                <span class="amount-value">¥{{ helpers.formatAmount(state.totalExpenses) }}</span>
+        <div class="expenses-header animate-fade-in-up" style="display: flex; justify-content: space-between; align-items: flex-end;">
+            <div>
+                <p class="header-subtitle">购买清单</p>
+                <div class="header-amount">
+                    <span class="amount-value">{{ state.purchasePlans.length }} <span style="font-size: 1rem; font-weight: normal;">项</span></span>
+                </div>
+            </div>
+            <div style="text-align: right; padding-bottom: 0.25rem;">
+                <p class="header-subtitle" style="margin-bottom: 0.25rem;">总预算/支出</p>
+                <div class="header-amount" style="justify-content: flex-end;">
+                    <span class="amount-value" style="font-size: 1.5rem;">¥{{ helpers.formatAmount(totalPurchaseAmount) }}</span>
+                </div>
             </div>
         </div>
         
@@ -20,42 +28,43 @@
             <div v-if="state.loading" class="loading-state">
                 <div class="spinner"></div>
             </div>
-            <div v-else-if="state.expenses.length === 0" class="empty-state">
+            <div v-else-if="state.purchasePlans.length === 0" class="empty-state">
                 <div class="empty-text">EMPTY</div>
-                <p class="empty-subtext">空空如也，开始记录第一笔开销吧</p>
+                <p class="empty-subtext">空空如也，开始添加购买计划吧</p>
             </div>
             <div v-else class="timeline-container">
                 <!-- Continuous Timeline Line -->
                 <div class="timeline-line"></div>
                 
                 <div class="timeline-groups">
-                    <div v-for="group in groupedExpenses" :key="group.date" class="timeline-group">
-                        <!-- Timeline Node & Date -->
+                    <div v-for="group in groupedPlans" :key="group.area" class="timeline-group">
+                        <!-- Timeline Node & Area -->
                         <div class="timeline-node-wrapper">
                             <div class="timeline-dot"></div>
-                            <h3 class="timeline-date">{{ group.date }}</h3>
+                            <h3 class="timeline-date">{{ group.area }}</h3>
                         </div>
                         
                         <!-- Cards in Group -->
                         <div class="timeline-cards">
-                            <div v-for="(expense, index) in group.items" :key="expense.id" 
-                                 @click="actions.navigate('expense-detail', { id: expense.id })" 
+                            <div v-for="(plan, index) in group.items" :key="plan.id" 
+                                 @click="actions.navigate('purchase-plan-detail', { id: plan.id })" 
                                  class="expense-card group animate-fade-in-up"
                                  :style="{ animationDelay: `${index * 0.05}s` }">
-                                <!-- <div class="card-icon" :class="helpers.getCategoryColorClass(expense.category_name)">
-                                    <span class="icon-text">{{ expense.category_name ? expense.category_name.substring(0,2) : '未' }}</span>
+                                <!-- <div class="card-icon" :class="helpers.getCategoryColorClass(plan.category_id)">
+                                    <span class="icon-text">{{ plan.category_id ? String(plan.category_id).substring(0,2) : '未' }}</span>
                                 </div> -->
                                 <div class="card-content">
-                                    <h4 class="card-title">{{ expense.title }}</h4>
+                                    <h4 class="card-title">{{ plan.item_name }}</h4>
                                     <div class="card-meta">
-                                        <span>{{ expense.category_name || '未分类' }}</span>
+                                        <span>{{ plan.category_id || '未分类' }}</span>
                                         <span class="meta-dot"></span>
-                                        <span>{{ helpers.getPaymentMethodText(expense.payment_method) || '未知' }}</span>
+                                        <span>{{ plan.purchase_method || '未知' }}</span>
                                     </div>
                                 </div>
                                 <div class="card-right">
-                                    <p class="card-amount">-{{ helpers.formatAmount(expense.amount) }}</p>
-                                    <span v-if="expense.status === 'planned'" class="status-badge">计划</span>
+                                    <p class="card-amount" v-if="plan.status === '已购买'">¥{{ helpers.formatAmount(plan.actual_price) }}</p>
+                                    <p class="card-amount" v-else style="color: #888; font-size: 14px;">预算: ¥{{ helpers.formatAmount(plan.estimated_budget) }}</p>
+                                    <span class="status-badge" :class="plan.status === '已购买' ? 'status-purchased' : (plan.status === '取消' ? 'status-cancelled' : 'status-planned')">{{ plan.status }}</span>
                                 </div>
                             </div>
                         </div>
@@ -72,19 +81,27 @@ import { useAppStore } from '../store.js';
 
 const { state, constants, computedProps, helpers, actions } = useAppStore();
 
-const groupedExpenses = computed(() => {
-    const groups = [];
-    let lastDate = null;
-    state.expenses.forEach(exp => {
-        const dateStr = helpers.formatDate(exp.payment_date);
-        if (dateStr !== lastDate) {
-            groups.push({ date: dateStr, items: [exp] });
-            lastDate = dateStr;
-        } else {
-            groups[groups.length - 1].items.push(exp);
+const groupedPlans = computed(() => {
+    const groups = {};
+    state.purchasePlans.forEach(plan => {
+        const area = plan.decoration_area || '未分配区域';
+        if (!groups[area]) {
+            groups[area] = { area: area, items: [] };
         }
+        groups[area].items.push(plan);
     });
-    return groups;
+    return Object.values(groups);
+});
+
+const totalPurchaseAmount = computed(() => {
+    return state.purchasePlans.reduce((sum, plan) => {
+        if (plan.status === '已购买') {
+            return sum + parseFloat(plan.actual_price || 0);
+        } else if (plan.status === '计划') {
+            return sum + parseFloat(plan.estimated_budget || 0);
+        }
+        return sum;
+    }, 0);
 });
 </script>
 
@@ -105,7 +122,7 @@ const groupedExpenses = computed(() => {
     z-index: 0;
 
     .massive-text {
-        font-size: 28vh;
+        font-size: 20vh;
         font-weight: 900;
         color: rgba(0, 0, 0, 0.02);
         letter-spacing: -0.05em;
@@ -298,74 +315,84 @@ const groupedExpenses = computed(() => {
         }
 
         &:hover .card-icon {
-            transform: scale(1.1) rotate(3deg);
-            .icon-text {
-                opacity: 1;
-            }
+            transform: scale(1.05) rotate(-5deg);
+            .icon-text { opacity: 1; }
         }
 
         .card-content {
             flex: 1;
             min-width: 0;
-            z-index: 10;
-
-            .card-title {
-                font-weight: 700;
-                font-size: 15px;
-                overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-                margin-bottom: 0.375rem;
-                transition: transform 0.3s ease;
-            }
-
-            .card-meta {
-                display: flex;
-                align-items: center;
-                font-size: 10px;
-                font-weight: 700;
-                color: rgba(0, 0, 0, 0.4);
-                text-transform: uppercase;
-                letter-spacing: 0.05em;
-
-                .meta-dot {
-                    margin: 0 0.5rem;
-                    width: 0.25rem;
-                    height: 0.25rem;
-                    border-radius: 50%;
-                    background-color: rgba(0, 0, 0, 0.2);
-                }
-            }
         }
 
-        &:hover .card-title {
-            transform: translateX(4px);
+        .card-title {
+            font-size: 1.125rem; line-height: 1.75rem;
+            font-weight: 700;
+            color: $color-black;
+            margin-bottom: 0.25rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .card-meta {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 10px;
+            font-weight: 700;
+            color: rgba(0, 0, 0, 0.4);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+
+            .meta-dot {
+                width: 3px;
+                height: 3px;
+                border-radius: 50%;
+                background-color: currentColor;
+                opacity: 0.5;
+            }
         }
 
         .card-right {
             text-align: right;
-            margin-left: 0.75rem;
             display: flex;
             flex-direction: column;
             align-items: flex-end;
-            z-index: 10;
+            gap: 0.5rem;
+        }
 
-            .card-amount {
-                font-weight: 900;
-                font-size: 16px;
-                letter-spacing: -0.025em;
+        .card-amount {
+            font-size: 1.25rem; line-height: 1.75rem;
+            font-weight: 900;
+            color: $color-black;
+            letter-spacing: -0.025em;
+        }
+
+        .status-badge {
+            font-size: 10px;
+            font-weight: 700;
+            padding: 0.25rem 0.5rem;
+            border-radius: 9999px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            
+            &.status-planned {
+                background-color: rgba(0, 0, 0, 0.05);
+                color: rgba(0, 0, 0, 0.6);
             }
-
-            .status-badge {
-                margin-top: 0.25rem;
-                font-size: 9px;
-                font-weight: 700;
-                padding: 0.125rem 0.5rem;
-                border-radius: 9999px;
-                background-color: rgba($color-brand-gold, 0.1);
-                color: $color-brand-gold;
-                text-transform: uppercase;
-                letter-spacing: 0.05em;
+            &.status-purchased {
+                background-color: rgba(52, 199, 89, 0.1);
+                color: #34c759;
+            }
+            &.status-cancelled {
+                background-color: rgba(255, 59, 48, 0.1);
+                color: #ff3b30;
             }
         }
     }
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
 }
 </style>

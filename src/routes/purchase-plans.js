@@ -1,22 +1,56 @@
 const express = require('express');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 const { db } = require('../database');
 const router = express.Router();
+
+// 配置 multer 上传
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const uploadDir = path.join(__dirname, '../../data/image');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, uniqueSuffix + path.extname(file.originalname));
+  }
+});
+const upload = multer({ 
+  storage: storage,
+  limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
+});
+
+/**
+ * POST /api/purchase-plans/upload - 上传购买清单相关图片
+ */
+router.post('/upload', upload.array('images', 5), (req, res) => {
+  try {
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ success: false, error: '没有上传任何文件' });
+    }
+    
+    const fileUrls = req.files.map(file => `/data/image/${file.filename}`);
+    
+    res.json({ success: true, data: { urls: fileUrls }, message: '图片上传成功' });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
 
 /**
  * GET /api/purchase-plans - 获取购买计划列表
  */
 router.get('/', (req, res) => {
   try {
-    const { category_id, vendor_id, status, tags, date_from, date_to, search, page = 1, limit = 20 } = req.query;
+    const { category_id, decoration_area, status, purchase_method, search, page = 1, limit = 20 } = req.query;
     
     let sql = `
-      SELECT 
-        p.*,
-        ec.name as category_name,
-        v.name as vendor_name
+      SELECT *
       FROM purchase_plans p
-      LEFT JOIN expense_categories ec ON p.category_id = ec.id
-      LEFT JOIN vendors v ON p.vendor_id = v.id
       WHERE 1=1
     `;
     const params = [];
@@ -25,34 +59,24 @@ router.get('/', (req, res) => {
       sql += ' AND p.category_id = ?';
       params.push(category_id);
     }
-    if (vendor_id) {
-      sql += ' AND p.vendor_id = ?';
-      params.push(vendor_id);
+    if (decoration_area) {
+      sql += ' AND p.decoration_area = ?';
+      params.push(decoration_area);
     }
     if (status) {
       sql += ' AND p.status = ?';
       params.push(status);
     }
-    if (tags) {
-      sql += ' AND p.tags LIKE ?';
-      params.push(`%${tags}%`);
-    }
-    if (date_from && !date_to) {
-      sql += ' AND (estimated_purchase_date >= ? OR purchased_date >= ?)';
-      params.push(date_from, date_from);
-    } else if (date_from && date_to) {
-      sql += ' AND (estimated_purchase_date BETWEEN ? AND ? OR purchased_date BETWEEN ? AND ?)';
-      params.push(date_from, date_to, date_from, date_to);
-    } else if (date_to) {
-      sql += ' AND (estimated_purchase_date <= ? OR purchased_date <= ?)';
-      params.push(date_to, date_to);
+    if (purchase_method) {
+      sql += ' AND p.purchase_method = ?';
+      params.push(purchase_method);
     }
     if (search) {
-      sql += ' AND (item_name LIKE ? OR notes LIKE ?)';
-      params.push(`%${search}%`, `%${search}%`);
+      sql += ' AND (item_name LIKE ? OR notes LIKE ? OR merchant_name LIKE ?)';
+      params.push(`%${search}%`, `%${search}%`, `%${search}%`);
     }
     
-    sql += ' ORDER BY estimated_purchase_date ASC NULLS FIRST, created_at DESC';
+    sql += ' ORDER BY created_at DESC';
     
     // 分页
     const offset = (page - 1) * parseInt(limit);
@@ -62,12 +86,13 @@ router.get('/', (req, res) => {
     const plans = db.all(sql, params);
     
     // 总数统计
-    let countSql = 'SELECT COUNT(*) as total FROM purchase_plans WHERE 1=1';
+    let countSql = 'SELECT COUNT(*) as total FROM purchase_plans p WHERE 1=1';
     const countParams = [];
-    if (category_id) { countSql += ' AND category_id = ?'; countParams.push(category_id); }
-    if (vendor_id) { countSql += ' AND vendor_id = ?'; countParams.push(vendor_id); }
-    if (status) { countSql += ' AND status = ?'; countParams.push(status); }
-    if (search) { countSql += ' AND item_name LIKE ?'; countParams.push(`%${search}%`); }
+    if (category_id) { countSql += ' AND p.category_id = ?'; countParams.push(category_id); }
+    if (decoration_area) { countSql += ' AND p.decoration_area = ?'; countParams.push(decoration_area); }
+    if (status) { countSql += ' AND p.status = ?'; countParams.push(status); }
+    if (purchase_method) { countSql += ' AND p.purchase_method = ?'; countParams.push(purchase_method); }
+    if (search) { countSql += ' AND (p.item_name LIKE ? OR p.merchant_name LIKE ?)'; countParams.push(`%${search}%`, `%${search}%`); }
     
     const countResult = db.get(countSql, countParams);
     const total = countResult ? countResult.total : 0;
@@ -84,13 +109,8 @@ router.get('/', (req, res) => {
 router.get('/:id', (req, res) => {
   try {
     const plan = db.get(`
-      SELECT 
-        p.*,
-        ec.name as category_name,
-        v.name as vendor_name
+      SELECT *
       FROM purchase_plans p
-      LEFT JOIN expense_categories ec ON p.category_id = ec.id
-      LEFT JOIN vendors v ON p.vendor_id = v.id
       WHERE p.id = ?
     `, [req.params.id]);
     
@@ -113,26 +133,21 @@ router.get('/:id', (req, res) => {
  */
 router.post('/', (req, res) => {
   try {
-    const { item_name, category_id, estimated_budget, actual_price, estimated_purchase_date, purchased_date, installation_required, scheduled_installation_date, vendor_id, tags, notes, decoration_area } = req.body;
+    const { item_name, category_id, purchase_method, decoration_area, estimated_budget, actual_price, merchant_name, product_link, status, notes, image_urls } = req.body;
     
     if (!item_name || !category_id) {
-      return res.status(400).json({ success: false, error: '物品名称和分类 ID 不能为空' });
+      return res.status(400).json({ success: false, error: '物品名称和分类不能为空' });
     }
     
     const result = db.run(`
       INSERT INTO purchase_plans 
-      (item_name, category_id, estimated_budget, actual_price, estimated_purchase_date, purchased_date, installation_required, scheduled_installation_date, vendor_id, tags, notes, decoration_area)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `, [item_name, category_id, estimated_budget || null, actual_price || null, estimated_purchase_date || null, purchased_date || null, installation_required || 0, scheduled_installation_date || null, vendor_id || null, tags || null, notes || null, decoration_area || null]);
+      (item_name, category_id, purchase_method, decoration_area, estimated_budget, actual_price, merchant_name, product_link, status, notes, image_urls)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [item_name, category_id, purchase_method || '其他', decoration_area || null, estimated_budget || null, actual_price || null, merchant_name || null, product_link || null, status || '计划', notes || null, image_urls || null]);
     
     const newPlan = db.get(`
-      SELECT 
-        p.*,
-        ec.name as category_name,
-        v.name as vendor_name
+      SELECT *
       FROM purchase_plans p
-      LEFT JOIN expense_categories ec ON p.category_id = ec.id
-      LEFT JOIN vendors v ON p.vendor_id = v.id
       WHERE p.id = ?
     `, [result.lastInsertRowid]);
     
@@ -148,7 +163,7 @@ router.post('/', (req, res) => {
 router.put('/:id', (req, res) => {
   try {
     const { id } = req.params;
-    const { item_name, estimated_budget, actual_price, estimated_purchase_date, purchased_date, installation_required, scheduled_installation_date, vendor_id, tags, notes, decoration_area } = req.body;
+    const { item_name, category_id, purchase_method, decoration_area, estimated_budget, actual_price, merchant_name, product_link, status, notes, image_urls } = req.body;
     
     const existing = db.get('SELECT * FROM purchase_plans WHERE id = ?', [id]);
     if (!existing) {
@@ -158,28 +173,23 @@ router.put('/:id', (req, res) => {
     db.run(`
       UPDATE purchase_plans 
       SET item_name = COALESCE(?, item_name),
+          category_id = COALESCE(?, category_id),
+          purchase_method = COALESCE(?, purchase_method),
+          decoration_area = COALESCE(?, decoration_area),
           estimated_budget = COALESCE(?, estimated_budget),
           actual_price = COALESCE(?, actual_price),
-          estimated_purchase_date = COALESCE(?, estimated_purchase_date),
-          purchased_date = COALESCE(?, purchased_date),
-          installation_required = COALESCE(?, installation_required),
-          scheduled_installation_date = COALESCE(?, scheduled_installation_date),
-          vendor_id = COALESCE(?, vendor_id),
-          tags = COALESCE(?, tags),
+          merchant_name = COALESCE(?, merchant_name),
+          product_link = COALESCE(?, product_link),
+          status = COALESCE(?, status),
           notes = COALESCE(?, notes),
-          decoration_area = COALESCE(?, decoration_area),
+          image_urls = COALESCE(?, image_urls),
           updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
-    `, [item_name, estimated_budget, actual_price, estimated_purchase_date, purchased_date, installation_required, scheduled_installation_date, vendor_id, tags, notes, decoration_area, id]);
+    `, [item_name, category_id, purchase_method, decoration_area, estimated_budget, actual_price, merchant_name, product_link, status, notes, image_urls, id]);
     
     const updated = db.get(`
-      SELECT 
-        p.*,
-        ec.name as category_name,
-        v.name as vendor_name
+      SELECT *
       FROM purchase_plans p
-      LEFT JOIN expense_categories ec ON p.category_id = ec.id
-      LEFT JOIN vendors v ON p.vendor_id = v.id
       WHERE p.id = ?
     `, [id]);
     

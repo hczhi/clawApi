@@ -25,7 +25,7 @@
                         <h2 class="main-title">{{ state.currentArea }}</h2>
                     </div>
                     
-                    <button @click="currentTab === 'expenses' ? addExpense() : addConcept()" class="btn-fab group">
+                    <button @click="currentTab === 'expenses' ? addExpense() : currentTab === 'purchase-plans' ? addPurchasePlan() : addConcept()" class="btn-fab group">
                         <i data-lucide="plus" class="icon"></i>
                     </button>
                 </div>
@@ -35,12 +35,17 @@
                     <button @click="currentTab = 'expenses'" 
                             class="tab-btn"
                             :class="{'active': currentTab === 'expenses'}">
-                        相关账单
+                        账单
+                    </button>
+                    <button @click="currentTab = 'purchase-plans'" 
+                            class="tab-btn"
+                            :class="{'active': currentTab === 'purchase-plans'}">
+                        购买清单
                     </button>
                     <button @click="currentTab = 'concepts'" 
                             class="tab-btn"
                             :class="{'active': currentTab === 'concepts'}">
-                        相关灵感
+                        灵感
                     </button>
                 </div>
             </div>
@@ -88,9 +93,7 @@
                                  :style="{ animationDelay: `${index * 0.05}s` }">
                                 
                                 <div class="item-left">
-                                    <div class="icon-wrapper">
-                                        <i :data-lucide="helpers.getCategoryIcon(expense.category_name)" class="icon"></i>
-                                    </div>
+                                    
                                     <div class="item-info">
                                         <div class="item-title">{{ expense.title }}</div>
                                         <div class="item-date">{{ helpers.formatDate(expense.payment_date) }}</div>
@@ -99,6 +102,43 @@
                                 <div class="item-right">
                                     <div class="item-amount">-{{ helpers.formatAmount(expense.amount) }}</div>
                                     <div class="item-method">{{ helpers.getPaymentMethodText(expense.payment_method) }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Purchase Plans Tab -->
+                    <div v-else-if="!loading && currentTab === 'purchase-plans'" class="tab-content-wrapper">
+                        
+                        <!-- Empty State -->
+                        <div v-if="purchasePlans.length === 0" class="empty-state animate-fade-in-up">
+                            <div class="empty-icon-wrapper animate-bounce-slow">
+                                <i data-lucide="shopping-bag" class="icon"></i>
+                            </div>
+                            <h3 class="empty-title">暂无购买清单</h3>
+                            <p class="empty-desc">该区域还没有购买清单，点击下方按钮添加吧</p>
+                            <button @click="addPurchasePlan" class="btn-primary">
+                                添加清单
+                            </button>
+                        </div>
+
+                        <!-- Purchase Plans List -->
+                        <div v-else class="expense-list">
+                            <div v-for="(plan, index) in purchasePlans" :key="plan.id" 
+                                 @click="actions.navigate('purchase-plan-detail', { id: plan.id })"
+                                 class="expense-item group animate-fade-in-up"
+                                 :style="{ animationDelay: `${index * 0.05}s` }">
+                                
+                                <div class="item-left">
+                                    <div class="item-info">
+                                        <div class="item-title">{{ plan.item_name }}</div>
+                                        <div class="item-date">{{ plan.category_id || '未分类' }}</div>
+                                    </div>
+                                </div>
+                                <div class="item-right">
+                                    <div class="item-amount" v-if="plan.status === '已购买'" style="color: #34c759;">¥{{ helpers.formatAmount(plan.actual_price) }}</div>
+                                    <div class="item-amount" v-else style="color: #888; font-size: 14px;">¥{{ helpers.formatAmount(plan.estimated_budget) }}</div>
+                                    <div class="item-method" :style="{color: plan.status === '已购买' ? '#34c759' : (plan.status === '取消' ? '#ff3b30' : '#111')}">{{ plan.status }}</div>
                                 </div>
                             </div>
                         </div>
@@ -161,6 +201,7 @@ const { state, helpers, actions } = useAppStore();
 const currentTab = ref('expenses');
 const loading = ref(true);
 const expenses = ref([]);
+const purchasePlans = ref([]);
 const concepts = ref([]);
 
 const totalAmount = computed(() => {
@@ -172,13 +213,17 @@ const fetchData = async () => {
     try {
         const areaName = state.currentArea;
         
-        const [expRes, conRes] = await Promise.all([
+        const [expRes, planRes, conRes] = await Promise.all([
             axios.get('/api/expenses', { params: { decoration_area: areaName, limit: 100 } }),
+            axios.get('/api/purchase-plans', { params: { decoration_area: areaName, limit: 100 } }),
             axios.get('/api/design-concepts', { params: { decoration_area: areaName, limit: 100 } })
         ]);
         
         if (expRes.data.success) {
             expenses.value = expRes.data.data;
+        }
+        if (planRes.data.success) {
+            purchasePlans.value = planRes.data.data;
         }
         if (conRes.data.success) {
             concepts.value = conRes.data.data;
@@ -195,6 +240,10 @@ const fetchData = async () => {
 
 const addExpense = () => {
     actions.navigate('expense-form', { mode: 'add', area: state.currentArea });
+};
+
+const addPurchasePlan = () => {
+    actions.navigate('purchase-plan-form', { mode: 'add', area: state.currentArea });
 };
 
 const addConcept = () => {
@@ -540,11 +589,7 @@ onMounted(() => {
         }
 
         &:hover {
-            background-color: rgba(255, 255, 255, 0.6);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.03);
-            border-color: rgba(255, 255, 255, 0.6);
+            color: $color-black;
         }
 
         .item-left {
@@ -639,7 +684,7 @@ onMounted(() => {
         border: 1px solid transparent;
         transition: all 0.5s ease;
         cursor: pointer;
-
+        max-width: 200px;
         @media (min-width: 640px) {
             margin-bottom: 1rem;
             padding: 0.75rem;

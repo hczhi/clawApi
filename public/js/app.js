@@ -62,9 +62,13 @@ const app = createApp({
                 { key: 'priority', label: '优先级', type: 'status' },
             ],
             'purchase-plans': [
-                { key: 'item_name', label: '物品名称' },
+                { key: 'item_name', label: '商品名称' },
+                { key: 'category_name', label: '分类' },
+                { key: 'purchase_method', label: '购买方式' },
+                { key: 'decoration_area', label: '使用区域' },
                 { key: 'estimated_budget', label: '预算', type: 'amount' },
-                { key: 'actual_price', label: '实际价格', type: 'amount' },
+                { key: 'actual_price', label: '付款金额', type: 'amount' },
+                { key: 'merchant_name', label: '商家名称' },
                 { key: 'status', label: '状态', type: 'status' },
             ],
             'timeline': [

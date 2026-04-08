@@ -46,7 +46,7 @@
 
                 <!-- All Images -->
                 <div v-if="state.currentConceptImages.length > 0" class="images-list">
-                    <div v-for="(img, idx) in state.currentConceptImages" :key="idx" class="image-item">
+                    <div v-for="(img, idx) in state.currentConceptImages" :key="idx" class="image-item" @click="actions.previewImage(img)" style="cursor: pointer;">
                         <img :src="img" />
                     </div>
                 </div>

@@ -3,38 +3,22 @@
         <!-- Huge Background Text -->
         <div class="massive-bg-wrapper">
             <span class="massive-text">
-                NEW REC.
+                PLAN
             </span>
         </div>
 
         <div class="form-content animate-slide-up">
-            <form @submit.prevent="actions.saveExpense" class="expense-form">
-                <!-- Amount Input -->
-                <div class="amount-section">
-                    <label class="section-label">输入金额</label>
-                    <div class="amount-input-wrapper">
-                        <span class="currency-symbol">¥</span>
-                        <input 
-                            type="number" 
-                            step="0.01" 
-                            v-model="state.formData.amount" 
-                            required
-                            class="amount-input"
-                            placeholder="0.00"
-                        >
-                    </div>
-                </div>
-
-                <div class="form-fields">
+            <form @submit.prevent="actions.savePurchasePlan" class="expense-form">
+                <div class="form-fields" style="padding-top: 2rem;">
                     <!-- Title -->
                     <div class="form-group">
-                        <label class="field-label">账单标题</label>
+                        <label class="field-label">商品名称</label>
                         <input 
                             type="text" 
-                            v-model="state.formData.title" 
+                            v-model="state.purchasePlanForm.item_name" 
                             required
                             class="form-input"
-                            placeholder="例如：购买客厅沙发"
+                            placeholder="例如：林氏木业真皮沙发"
                         >
                     </div>
                     
@@ -43,111 +27,120 @@
                         <div class="form-group">
                             <label class="field-label">所属分类</label>
                             <div class="select-wrapper">
-                                <select v-model="state.formData.category_id" required class="form-select">
+                                <select v-model="state.purchasePlanForm.category_id" required class="form-select">
                                     <option value="" disabled selected>选择分类</option>
-                                    <option v-for="cat in state.categories" :key="cat.id" :value="cat.id">
-                                        {{ cat.level > 1 ? '└ ' + cat.name : cat.name }}
+                                    <option v-for="cat in constants.purchaseCategories" :key="cat" :value="cat">
+                                        {{ cat }}
                                     </option>
                                 </select>
                                 <span class="select-arrow">▼</span>
                             </div>
                         </div>
 
-                        <!-- Date -->
+                        <!-- Decoration Area -->
                         <div class="form-group">
-                            <label class="field-label">发生日期</label>
+                            <label class="field-label">使用区域</label>
+                            <div class="select-wrapper">
+                                <select v-model="state.purchasePlanForm.decoration_area" class="form-select">
+                                    <option value="">未指定</option>
+                                    <option v-for="area in constants.decorationAreas" :key="area.value" :value="area.value">
+                                        {{ area.label }}
+                                    </option>
+                                </select>
+                                <span class="select-arrow">▼</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Purchase Method -->
+                    <div class="form-group">
+                        <label class="field-label">购买方式</label>
+                        <div class="chip-group">
+                            <div 
+                                v-for="method in ['线下', '淘宝', '京东', '其他']" 
+                                :key="method"
+                                @click="state.purchasePlanForm.purchase_method = method"
+                                class="chip"
+                                :class="{ 'active': state.purchasePlanForm.purchase_method === method }"
+                            >
+                                {{ method }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <!-- Estimated Budget -->
+                        <div class="form-group">
+                            <label class="field-label">预算金额</label>
                             <input 
-                                type="date" 
-                                v-model="state.formData.payment_date" 
-                                required
+                                type="number" 
+                                step="0.01" 
+                                v-model="state.purchasePlanForm.estimated_budget" 
                                 class="form-input"
+                                placeholder="0.00"
                             >
                         </div>
-                    </div>
-
-                    <!-- Decoration Area -->
-                    <div class="form-group">
-                        <label class="field-label">装修区域</label>
-                        <div class="chip-group">
-                            <div 
-                                v-for="area in constants.decorationAreas" 
-                                :key="area.value"
-                                @click="state.formData.decoration_area = state.formData.decoration_area === area.value ? '' : area.value"
-                                class="chip"
-                                :class="{ 'active': state.formData.decoration_area === area.value }"
-                            >
-                                {{ area.label }}
+                        
+                        <!-- Status -->
+                        <div class="form-group">
+                            <label class="field-label">购买状态</label>
+                            <div class="select-wrapper">
+                                <select v-model="state.purchasePlanForm.status" class="form-select" style="font-weight: 900;" :style="{color: state.purchasePlanForm.status === '已购买' ? '#34c759' : (state.purchasePlanForm.status === '取消' ? '#ff3b30' : '#111')}">
+                                    <option value="计划">计划</option>
+                                    <option value="取消">取消</option>
+                                    <option value="已购买" disabled>已购买 (请在详情页操作)</option>
+                                </select>
+                                <span class="select-arrow">▼</span>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Payment Method -->
+                    <!-- Merchant Name -->
                     <div class="form-group">
-                        <label class="field-label">支付方式</label>
-                        <div class="chip-group">
-                            <div 
-                                v-for="method in constants.paymentMethods" 
-                                :key="method.value"
-                                @click="state.formData.payment_method = method.value"
-                                class="chip"
-                                :class="{ 'active': state.formData.payment_method === method.value }"
-                            >
-                                {{ method.label }}
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Payer Names -->
-                    <div class="form-group">
-                        <label class="field-label">支付人</label>
+                        <label class="field-label">商家名称</label>
                         <input 
                             type="text" 
-                            v-model="state.formData.payer_names" 
+                            v-model="state.purchasePlanForm.merchant_name" 
                             class="form-input"
-                            placeholder="例如：张三, 李四"
+                            placeholder="选填"
                         >
                     </div>
-
-                    <!-- Status -->
+                    
+                    <!-- Product Link -->
                     <div class="form-group">
-                        <div class="status-toggle">
-                            <div class="toggle-slider"
-                                 :class="state.formData.status === 'paid' ? 'pos-left' : 'pos-right'"></div>
-                            <label class="toggle-option">
-                                <input type="radio" v-model="state.formData.status" value="paid" class="sr-only">
-                                <span class="toggle-text" :class="state.formData.status === 'paid' ? 'text-active' : 'text-inactive'">已结清</span>
-                            </label>
-                            <label class="toggle-option">
-                                <input type="radio" v-model="state.formData.status" value="planned" class="sr-only">
-                                <span class="toggle-text" :class="state.formData.status === 'planned' ? 'text-active' : 'text-inactive'">计划开支</span>
-                            </label>
-                        </div>
+                        <label class="field-label">商品链接</label>
+                        <input 
+                            type="url" 
+                            v-model="state.purchasePlanForm.product_link" 
+                            class="form-input"
+                            placeholder="选填，http://..."
+                        >
                     </div>
 
                     <!-- Notes -->
                     <div class="form-group">
-                        <label class="field-label">补充说明</label>
+                        <label class="field-label">备注</label>
                         <textarea 
-                            v-model="state.formData.notes" 
+                            v-model="state.purchasePlanForm.notes" 
                             rows="3"
                             class="form-textarea"
-                            placeholder="填写商品链接、尺寸要求或其他细节..."
+                            placeholder="填写其他细节..."
                         ></textarea>
                     </div>
-                    
+
                     <div class="form-group full-width">
-                        <label class="field-label">账单凭证 (最多5张)</label>
+                        <label class="field-label">相关图片 (最多5张)</label>
                         <div class="image-upload-container">
                             <div class="image-grid">
-                                <div v-for="(img, index) in state.expenseImagesPreview" :key="index" class="image-preview-item">
+                                <div v-for="(img, index) in state.purchasePlanImagesPreview" :key="index" class="image-preview-item">
                                     <img :src="img" class="preview-img" />
-                                    <button @click.prevent="actions.removeExpenseImage(index)" class="btn-remove-image">
+                                    <button @click.prevent="actions.removePurchasePlanImage(index)" class="btn-remove-image">
                                         <i data-lucide="x" class="icon-small"></i>
                                     </button>
                                 </div>
-                                <div v-if="state.expenseImagesPreview.length < 5" class="upload-btn-wrapper">
+                                <div v-if="state.purchasePlanImagesPreview.length < 5" class="upload-btn-wrapper">
                                     <label class="upload-label" :class="{ 'is-uploading': state.uploadingImages }">
-                                        <input type="file" multiple accept="image/*" @change="actions.handleExpenseImageUpload" class="hidden-input" style="display: none;" :disabled="state.uploadingImages" />
+                                        <input type="file" multiple accept="image/*" @change="actions.handlePurchasePlanImageUpload" class="hidden-input" style="display: none;" :disabled="state.uploadingImages" />
                                         <i v-if="!state.uploadingImages" data-lucide="camera" class="upload-icon"></i>
                                         <i v-else data-lucide="loader" class="upload-icon spin"></i>
                                         <span class="upload-text">{{ state.uploadingImages ? '上传中...' : '添加图片' }}</span>
@@ -158,7 +151,7 @@
                     </div>
                 </div>
 
-                <div class="form-actions">
+                <div class="form-actions" style="margin-top: 2rem;">
                     <button type="submit" class="btn-submit">
                         <span v-if="state.saving" class="spinner"></span>
                         {{ state.saving ? '处理中...' : '确认保存' }}
@@ -221,54 +214,6 @@ const { state, constants, computedProps, helpers, actions } = useAppStore();
     display: flex;
     flex-direction: column;
     gap: 2rem;
-}
-
-.amount-section {
-    text-align: center;
-    padding: 1rem 0 2rem;
-
-    .section-label {
-        display: block;
-        font-size: 10px;
-        font-weight: 700;
-        color: rgba(0, 0, 0, 0.4);
-        text-transform: uppercase;
-        letter-spacing: 0.1em;
-        margin-bottom: 1rem;
-    }
-
-    .amount-input-wrapper {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: $color-black;
-
-        .currency-symbol {
-            font-size: 1.875rem; line-height: 2.25rem;
-            font-family: $font-sans;
-            font-weight: 700;
-            margin-right: 0.5rem;
-        }
-
-        .amount-input {
-            width: 60%;
-            text-align: center;
-            font-size: 3rem; line-height: 1;
-            font-family: $font-sans;
-            font-weight: 900;
-            background: transparent;
-            outline: none;
-            caret-color: $color-black;
-
-            &::placeholder {
-                color: rgba(0, 0, 0, 0.1);
-            }
-
-            @media (min-width: 768px) {
-                font-size: 3.75rem; line-height: 1;
-            }
-        }
-    }
 }
 
 .form-fields {
@@ -372,68 +317,6 @@ const { state, constants, computedProps, helpers, actions } = useAppStore();
             color: $color-white;
             @include shadow-soft;
             border-color: transparent;
-        }
-    }
-}
-
-.status-toggle {
-    @include glassmorphism(rgba(255, 255, 255, 0.8), 12px);
-    border-radius: 9999px;
-    padding: 0.25rem;
-    display: flex;
-    position: relative;
-    border: 1px solid rgba(0, 0, 0, 0.05);
-
-    .toggle-slider {
-        position: absolute;
-        top: 0.25rem;
-        bottom: 0.25rem;
-        width: calc(50% - 0.25rem);
-        background-color: $color-black;
-        border-radius: 9999px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-
-        &.pos-left {
-            transform: translateX(0);
-        }
-        &.pos-right {
-            transform: translateX(calc(100% + 0.5rem));
-        }
-    }
-
-    .toggle-option {
-        flex: 1;
-        position: relative;
-        z-index: 10;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 0.75rem 0;
-        cursor: pointer;
-
-        .sr-only {
-            position: absolute;
-            width: 1px;
-            height: 1px;
-            padding: 0;
-            margin: -1px;
-            overflow: hidden;
-            clip: rect(0, 0, 0, 0);
-            border: 0;
-        }
-
-        .toggle-text {
-            font-size: 13px;
-            font-weight: 700;
-            transition: color 0.3s ease;
-
-            &.text-active {
-                color: $color-white;
-            }
-            &.text-inactive {
-                color: rgba(0, 0, 0, 0.4);
-            }
         }
     }
 }

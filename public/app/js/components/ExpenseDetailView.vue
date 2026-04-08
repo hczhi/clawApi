@@ -13,9 +13,7 @@
                 <div class="card-glow" :class="helpers.getCategoryBgClass(state.currentExpense.category_name)"></div>
                 
                 <div class="receipt-header">
-                    <div class="category-icon" :class="helpers.getCategoryColorClass(state.currentExpense.category_name)">
-                        <span class="icon-text">{{ state.currentExpense.category_name ? state.currentExpense.category_name.substring(0,2) : '未' }}</span>
-                    </div>
+                 
                     <h2 class="receipt-title">{{ state.currentExpense.title }}</h2>
                     <p class="receipt-amount">-{{ helpers.formatAmount(state.currentExpense.amount) }}</p>
                     <span class="status-badge" :class="state.currentExpense.status === 'paid' ? 'paid' : 'planned'">
@@ -56,7 +54,17 @@
                         <p class="notes-content">{{ state.currentExpense.notes }}</p>
                     </div>
                 </div>
+                  <div v-if="state.currentExpense.image_urls && state.currentExpense.image_urls !== '[]'" class="detail-section animate-slide-up" style="animation-delay: 0.1s;">
+              
+                <div class="image-gallery">
+                    <img v-for="(img, idx) in JSON.parse(state.currentExpense.image_urls)" 
+                         :key="idx" :src="img" class="gallery-image" 
+                         @click="actions.previewImage(img)" />
+                </div>
             </div>
+            </div>
+
+          
 
             <div class="action-buttons">
                 <button @click="actions.navigate('expense-form', { mode: 'edit', id: state.currentExpense.id })" class="btn-edit">
@@ -111,8 +119,7 @@ const { state, constants, computedProps, helpers, actions } = useAppStore();
     position: relative;
     z-index: 10;
     max-width: 600px;
-    margin: 0 auto;
-    width: 100%;
+    margin: 0 2rem;
 }
 
 .receipt-card {

@@ -34,6 +34,11 @@
                     灵感
                 </button>
                 
+                <button @click.stop.prevent="actions.navigate('purchase-plans')" class="menu-item">
+                    <span class="indicator"></span>
+                    清单
+                </button>
+                
                 <button @click.stop.prevent="actions.navigate('myhome')" class="menu-item">
                     <span class="indicator"></span>
                     我的家

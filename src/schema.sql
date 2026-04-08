@@ -77,6 +77,7 @@ CREATE TABLE IF NOT EXISTS expenses (
     payer_names TEXT,
     payment_date DATE NOT NULL,
     receipt_file_path TEXT,
+    image_urls TEXT,
     vendor_id INTEGER,
     reimbursement_status TEXT CHECK(reimbursement_status IN ('not_required', 'paid_in_full', 'partial', 'pending')) DEFAULT 'not_required',
     reimbursed_amount DECIMAL(12,2) DEFAULT 0,
@@ -114,21 +115,18 @@ CREATE TABLE IF NOT EXISTS design_concepts (
 CREATE TABLE IF NOT EXISTS purchase_plans (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     item_name TEXT NOT NULL,
-    category_id INTEGER NOT NULL,
+    category_id TEXT NOT NULL,
+    purchase_method TEXT CHECK(purchase_method IN ('线下', '淘宝', '京东', '其他')) DEFAULT '其他',
+    decoration_area TEXT CHECK(decoration_area IN ('客厅', '卧室', '卫浴', '厨房', '阳台', '过道')),
     estimated_budget DECIMAL(12,2),
     actual_price DECIMAL(12,2),
-    estimated_purchase_date DATE,
-    purchased_date DATE,
-    installation_required BOOLEAN DEFAULT 0,
-    scheduled_installation_date DATE,
-    status TEXT CHECK(status IN ('todo', 'in_progress', 'purchased', 'delivered', 'installed', 'cancelled')) DEFAULT 'todo',
-    vendor_id INTEGER,
+    merchant_name TEXT,
+    product_link TEXT,
+    image_urls TEXT,
+    status TEXT CHECK(status IN ('计划', '已购买', '取消')) DEFAULT '计划',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    tags TEXT,
-    notes TEXT,
-    FOREIGN KEY(category_id) REFERENCES expense_categories(id),
-    FOREIGN KEY(vendor_id) REFERENCES vendors(id)
+    notes TEXT
 );
 
 -- 7. 日程进度表

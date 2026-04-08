@@ -1,6 +1,46 @@
 const express = require('express');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 const { db } = require('../database');
 const router = express.Router();
+
+// 配置 multer 上传
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const uploadDir = path.join(__dirname, '../../data/image');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, uniqueSuffix + path.extname(file.originalname));
+  }
+});
+const upload = multer({ 
+  storage: storage,
+  limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
+});
+
+/**
+ * POST /api/expenses/upload - 上传账单相关图片
+ */
+router.post('/upload', upload.array('images', 5), (req, res) => {
+  try {
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ success: false, error: '没有上传任何文件' });
+    }
+    
+    // 使用相对路径作为 URL 返回给前端，匹配 server.js 中的配置
+    const fileUrls = req.files.map(file => `/data/image/${file.filename}`);
+    
+    res.json({ success: true, data: { urls: fileUrls }, message: '图片上传成功' });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
 
 /**
  * GET /api/expenses - 获取费用清单列表
@@ -120,7 +160,7 @@ router.get('/:id', (req, res) => {
  */
 router.post('/', (req, res) => {
   try {
-    const { category_id, quote_id, title, amount, payment_method, payer_names, payment_date, receipt_file_path, vendor_id, reimbursement_status, tags, notes, decoration_area } = req.body;
+    const { category_id, quote_id, title, amount, payment_method, payer_names, payment_date, receipt_file_path, image_urls, vendor_id, reimbursement_status, tags, notes, decoration_area } = req.body;
     
     if (!category_id || !title || !amount || !payment_date) {
       return res.status(400).json({ success: false, error: '分类 ID、标题、金额、支付日期不能为空' });
@@ -138,9 +178,9 @@ router.post('/', (req, res) => {
     }
     
     const result = db.run(`
-      INSERT INTO expenses (category_id, quote_id, title, amount, payment_method, payer_names, payment_date, receipt_file_path, vendor_id, reimbursement_status, tags, notes, decoration_area)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `, [category_id, quote_id || null, title, amount, payment_method || 'cash', payer_names || null, payment_date, receipt_file_path || null, vendor_id || null, reimbursement_status || 'not_required', tags || null, notes || null, decoration_area || null]);
+      INSERT INTO expenses (category_id, quote_id, title, amount, payment_method, payer_names, payment_date, receipt_file_path, image_urls, vendor_id, reimbursement_status, tags, notes, decoration_area)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [category_id, quote_id || null, title, amount, payment_method || 'cash', payer_names || null, payment_date, receipt_file_path || null, image_urls || null, vendor_id || null, reimbursement_status || 'not_required', tags || null, notes || null, decoration_area || null]);
     
     const newExpense = db.get(`
       SELECT 
@@ -165,7 +205,7 @@ router.post('/', (req, res) => {
 router.put('/:id', (req, res) => {
   try {
     const { id } = req.params;
-    const { title, amount, payment_method, payment_date, status, notes, payer_names, decoration_area } = req.body;
+    const { category_id, quote_id, title, amount, payment_method, payer_names, payment_date, receipt_file_path, image_urls, vendor_id, reimbursement_status, tags, notes, decoration_area, status } = req.body;
     
     const existing = db.get('SELECT * FROM expenses WHERE id = ?', [id]);
     if (!existing) {
@@ -174,17 +214,24 @@ router.put('/:id', (req, res) => {
     
     db.run(`
       UPDATE expenses 
-      SET title = COALESCE(?, title),
+      SET category_id = COALESCE(?, category_id),
+          quote_id = COALESCE(?, quote_id),
+          title = COALESCE(?, title),
           amount = COALESCE(?, amount),
           payment_method = COALESCE(?, payment_method),
-          payment_date = COALESCE(?, payment_date),
-          status = COALESCE(?, status),
-          notes = COALESCE(?, notes),
           payer_names = COALESCE(?, payer_names),
+          payment_date = COALESCE(?, payment_date),
+          receipt_file_path = COALESCE(?, receipt_file_path),
+          image_urls = COALESCE(?, image_urls),
+          vendor_id = COALESCE(?, vendor_id),
+          reimbursement_status = COALESCE(?, reimbursement_status),
+          tags = COALESCE(?, tags),
+          notes = COALESCE(?, notes),
           decoration_area = COALESCE(?, decoration_area),
+          status = COALESCE(?, status),
           updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
-    `, [title, amount, payment_method, payment_date, status, notes, payer_names, decoration_area, id]);
+    `, [category_id, quote_id, title, amount, payment_method, payer_names, payment_date, receipt_file_path, image_urls, vendor_id, reimbursement_status, tags, notes, decoration_area, status, id]);
     
     const updated = db.get(`
       SELECT 

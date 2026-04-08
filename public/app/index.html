@@ -12,6 +12,7 @@
     <script src="https://unpkg.com/dayjs@1.11.10/dayjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sass.js/0.11.1/sass.sync.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/vue3-sfc-loader/dist/vue3-sfc-loader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
     <script type="module" src="/app/js/app.js"></script>
     <link rel="stylesheet" href="/app/css/style.css">
 </head>
@@ -32,7 +33,7 @@
             </h1>
             
             <div class="header-right">
-                <button v-if="['expenses', 'concepts'].includes(state.currentView)" @click="actions.navigate(state.currentView === 'expenses' ? 'expense-form' : 'concept-form', { mode: 'add' })" class="icon-btn">
+                <button v-if="['expenses', 'concepts', 'purchase-plans'].includes(state.currentView)" @click="actions.navigate(state.currentView === 'expenses' ? 'expense-form' : state.currentView === 'concepts' ? 'concept-form' : 'purchase-plan-form', { mode: 'add' })" class="icon-btn">
                     <i data-lucide="plus" class="text-black"></i>
                 </button>
             </div>
@@ -44,6 +45,16 @@
                 <component :is="currentViewComponent"></component>
             </transition>
         </main>
+
+        <!-- Image Preview Modal -->
+        <transition name="fade">
+            <div v-if="state.previewModal.show" class="preview-modal-overlay" @click="actions.closePreviewModal">
+                <button class="preview-close-btn" @click.stop="actions.closePreviewModal">
+                    <i data-lucide="x" class="text-white"></i>
+                </button>
+                <img :src="state.previewModal.imageUrl" class="preview-modal-image" @click.stop />
+            </div>
+        </transition>
 
         <!-- Minimal FAB Action Menu -->
         <div v-show="state.currentView === 'home'" class="fab-container">
@@ -66,6 +77,15 @@
                 
                 <transition name="slide-up-fade">
                     <div v-if="state.fabOpen" class="fab-item fab-item-2" style="transition-delay: 50ms;">
+                        <!-- Add Purchase Plan -->
+                        <button @click="actions.navigate('purchase-plan-form', { mode: 'add' }); state.fabOpen = false" class="fab-sub-btn group">
+                            <span class="fab-sub-btn-text">清单</span>
+                        </button>
+                    </div>
+                </transition>
+                
+                <transition name="slide-up-fade">
+                    <div v-if="state.fabOpen" class="fab-item fab-item-3" style="transition-delay: 100ms;">
                         <!-- Add Expense -->
                         <button @click="actions.navigate('expense-form', { mode: 'add' }); state.fabOpen = false" class="fab-sub-btn group">
                             <span class="fab-sub-btn-text">记账</span>

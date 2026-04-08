@@ -4,7 +4,6 @@
         <!-- Header -->
         <div class="edit-header">
             <div class="header-left animate-slide-up">
-                <h2 class="title">编辑户型</h2>
             </div>
 
             <!-- Actions Container -->
