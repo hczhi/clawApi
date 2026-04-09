@@ -489,7 +489,6 @@ $color-danger: #D96C6C;
         position: relative;
     left: 0;
     width: 100%;
-    height: 55%;
     z-index: 5;
     display: flex;
     flex-direction: column;
