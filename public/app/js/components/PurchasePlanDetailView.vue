@@ -26,10 +26,7 @@
                         <span class="label">区域</span>
                         <span class="value">{{ state.currentPurchasePlan.decoration_area }}</span>
                     </div>
-                    <div class="info-row" v-if="state.currentPurchasePlan?.estimated_budget">
-                        <span class="label">预算</span>
-                        <span class="value">¥{{ helpers.formatAmount(state.currentPurchasePlan.estimated_budget) }}</span>
-                    </div>
+                    
                     <div class="info-row" v-if="state.currentPurchasePlan?.actual_price">
                         <span class="label">{{ state.currentPurchasePlan?.status === '已购买' ? '实付' : '方案金额' }}</span>
                         <span class="value font-black">¥{{ helpers.formatAmount(state.currentPurchasePlan.actual_price) }}</span>
@@ -356,7 +353,7 @@ $color-danger: #D96C6C;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        border-bottom: 1px solid $color-gray-100;
+        border-bottom: 1px solid rgba(42, 37, 34, 0.1);
         padding-bottom: 1.25rem;
 
         &:last-child {

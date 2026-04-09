@@ -54,7 +54,7 @@
 
                     <div class="form-row">
                         <!-- Estimated Budget -->
-                        <div class="form-group">
+                        <!-- <div class="form-group">
                             <label class="field-label">预算金额</label>
                             <input 
                                 type="number" 
@@ -63,7 +63,7 @@
                                 class="form-input"
                                 placeholder="0.00"
                             >
-                        </div>
+                        </div> -->
                         
                         <!-- Status -->
                         <div class="form-group">

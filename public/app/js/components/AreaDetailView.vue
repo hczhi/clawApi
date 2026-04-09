@@ -567,7 +567,7 @@ onMounted(() => {
 .expense-list {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 1rem;
     padding: 0 0.5rem;
 
     @media (min-width: 640px) {
@@ -584,7 +584,8 @@ onMounted(() => {
         border-radius: 2rem;
         transition: all 0.5s ease;
         cursor: pointer;
-
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
         @media (min-width: 640px) {
         }
 
