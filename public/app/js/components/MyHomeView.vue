@@ -367,7 +367,7 @@ onMounted(() => {
     }
 
     &:hover {
-      background-color: $color-black;
+      background-color: $color-primary;
       color: $color-white;
 
       .btn-icon {
@@ -493,12 +493,12 @@ onMounted(() => {
   }
 
   .edit-btn {
-    height: 3rem;
-    padding-left: 1.5rem;
-    padding-right: 0.5rem;
-    border-radius: 9999px;
-    background-color: $color-black;
-    color: $color-white;
+        height: 3rem;
+        padding-left: 1.5rem;
+        padding-right: 0.5rem;
+        border-radius: 9999px;
+        background-color: $color-primary;
+        color: $color-white;
     display: flex;
     align-items: center;
     gap: 1rem;
@@ -510,7 +510,7 @@ onMounted(() => {
     }
 
     &:hover {
-      background-color: #000;
+      background-color: darken($color-primary, 10%);
       transform: translateY(-4px);
 
       .icon-wrap {

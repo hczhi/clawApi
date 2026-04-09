@@ -511,6 +511,40 @@ const actions = {
             if (res.data.success) actions.goBack();
         } catch (error) { alert('保存失败，请重试'); console.error(error); } finally { state.saving = false; }
     },
+    selectPurchasePlanOption: async (optionId) => {
+        const plan = state.currentPurchasePlan;
+        if (!plan) return;
+        state.saving = true;
+        try {
+            const payload = { 
+                ...plan, 
+                selected_plan_id: optionId
+            };
+
+            try {
+                const parsedPlans = JSON.parse(plan.plans || '[]');
+                const activePlan = parsedPlans.find(p => p.id === optionId);
+                if (activePlan) {
+                    payload.actual_price = activePlan.price ? parseFloat(activePlan.price) : null;
+                    payload.merchant_name = activePlan.merchant_name;
+                    payload.purchase_method = activePlan.purchase_method;
+                    payload.product_link = activePlan.product_link;
+                    payload.notes = activePlan.notes;
+                    payload.image_urls = activePlan.image_urls;
+                }
+            } catch(e) {}
+
+            const res = await axios.put(`/api/purchase-plans/${plan.id}`, payload);
+            if (res.data.success) {
+                await actions.fetchPurchasePlanDetail(plan.id);
+            }
+        } catch (error) { 
+            alert('选择方案失败，请重试'); 
+            console.error(error); 
+        } finally { 
+            state.saving = false; 
+        }
+    },
     deletePurchasePlan: async () => {
         if (!state.currentPurchasePlan || !confirm('确定要删除这个购买清单吗？')) return;
         try {
@@ -524,7 +558,9 @@ const actions = {
             actual_price: state.currentPurchasePlan?.actual_price || state.currentPurchasePlan?.estimated_budget || null,
             payer_names: '',
             payment_method: 'wechat',
-            category_id: state.categories.length ? state.categories[0].id : ''
+            category_id: state.categories.length ? state.categories[0].id : '',
+            buy_date: dayjs().format('YYYY-MM-DD'),
+            remark: ''
         };
         state.purchaseModal.show = true;
         helpers.updateIcons();
@@ -535,8 +571,8 @@ const actions = {
     confirmPurchase: async () => {
         const plan = state.currentPurchasePlan;
         const modalData = state.purchaseModal.data;
-        if (!modalData.actual_price || !modalData.category_id) {
-            alert('请填写实际金额和费用分类');
+        if (!modalData.actual_price || !modalData.category_id || !modalData.buy_date) {
+            alert('请填写实际金额、费用分类和购买日期');
             return;
         }
         
@@ -545,7 +581,8 @@ const actions = {
             await axios.put(`/api/purchase-plans/${plan.id}`, {
                 ...plan,
                 status: '已购买',
-                actual_price: parseFloat(modalData.actual_price)
+                actual_price: parseFloat(modalData.actual_price),
+                buy_date: modalData.buy_date
             });
             
             await axios.post('/api/expenses', {
@@ -554,9 +591,9 @@ const actions = {
                 amount: parseFloat(modalData.actual_price),
                 payment_method: modalData.payment_method,
                 payer_names: modalData.payer_names,
-                payment_date: dayjs().format('YYYY-MM-DD'),
+                payment_date: modalData.buy_date,
                 decoration_area: plan.decoration_area,
-                notes: `由购买清单“${plan.item_name}”自动生成`,
+                notes: modalData.remark ? `由购买清单“${plan.item_name}”自动生成。备注: ${modalData.remark}` : `由购买清单“${plan.item_name}”自动生成`,
                 image_urls: plan.image_urls || '[]'
             });
             

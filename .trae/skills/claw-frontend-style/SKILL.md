@@ -24,14 +24,12 @@ This skill applies the distinctive, premium modern UI aesthetic of the clawApi a
   - Hover states that subtly scale or translate (`hover:scale-105 hover:-translate-y-2 group-hover:translate-x-1`).
 - **Animations**: Entrance animations like `animate-slide-up`, `animate-slide-right`, `animate-fade-in-up` with staged delays.
 
-## Common Tailwind Classes to Use
 
-- **Backgrounds**: `bg-[#FAFAFA]`, `bg-white`, `bg-black/[0.02]` (for hover rows).
-- **Text**: `text-[#111111]`, `text-black/40` (for secondary), `text-[10px] uppercase tracking-widest` (for labels).
-- **Cards/Containers**: `rounded-[2rem] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.03)] border border-black/5`.
-- **Buttons**: `rounded-full border border-black/10 flex items-center justify-center hover:bg-black hover:text-white transition-colors group`.
-- **Icons**: Opacity transitions (`opacity-70 group-hover:opacity-100`).
-
+Instead of emojis. Fix the padding so every component is spaced perfectly - not too close to other components but not too dispersed to waste space.
+ 
+The goal of the site is to look sleek, premium, and minimalist, like a spa in Switzerland. Design this in a way that matches what a working professional would reasonably pay thousands of dollars a month for, in a way that would make Steve Jobs smile.
+ 
+Avoid using colors unnecessarily, instead pick from a palette that is cohesive and stick to it. Ensure the site is responsive and elegant on both desktop and mobile."
 ## Usage Instructions
 
 When asked to create or optimize a page in this project:

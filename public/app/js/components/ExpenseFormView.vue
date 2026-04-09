@@ -368,7 +368,7 @@ const { state, constants, computedProps, helpers, actions } = useAppStore();
         }
 
         &.active {
-            background-color: $color-black;
+            background-color: $color-primary;
             color: $color-white;
             @include shadow-soft;
             border-color: transparent;
@@ -385,12 +385,12 @@ const { state, constants, computedProps, helpers, actions } = useAppStore();
     border: 1px solid rgba(0, 0, 0, 0.05);
 
     .toggle-slider {
-        position: absolute;
-        top: 0.25rem;
-        bottom: 0.25rem;
-        width: calc(50% - 0.25rem);
-        background-color: $color-black;
-        border-radius: 9999px;
+            position: absolute;
+            top: 0.25rem;
+            bottom: 0.25rem;
+            width: calc(50% - 0.25rem);
+            background-color: $color-primary;
+            border-radius: 9999px;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
@@ -430,6 +430,7 @@ const { state, constants, computedProps, helpers, actions } = useAppStore();
 
             &.text-active {
                 color: $color-white;
+                font-weight: 800;
             }
             &.text-inactive {
                 color: rgba(0, 0, 0, 0.4);
@@ -449,7 +450,7 @@ const { state, constants, computedProps, helpers, actions } = useAppStore();
 
     .btn-submit {
         width: 100%;
-        background-color: $color-black;
+        background-color: $color-primary;
         color: $color-white;
         padding: 1rem 0;
         border-radius: 9999px;

@@ -238,7 +238,7 @@ const groupedExpenses = computed(() => {
             width: 0.5rem;
             height: 0.5rem;
             border-radius: 50%;
-            background-color: $color-black;
+            background-color: $color-primary;
             box-shadow: 0 0 0 6px $color-white;
         }
 

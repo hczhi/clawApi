@@ -731,10 +731,11 @@ onMounted(() => {
         }
 
         &.btn-save {
-            background-color: $color-black;
+            background-color: $color-primary;
             color: $color-white;
             @include shadow-hover;
             &:hover {
+                background-color: darken($color-primary, 10%);
                 transform: translateY(-2px);
                 box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
             }
@@ -1085,7 +1086,7 @@ onMounted(() => {
     }
 
     &.active {
-        background-color: $color-black;
+        background-color: $color-primary;
         color: $color-white;
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         transform: scale(1.1);
@@ -1114,7 +1115,7 @@ onMounted(() => {
             position: absolute;
             top: -2.5rem;
             padding: 0.375rem 0.75rem;
-            background-color: $color-black;
+            background-color: $color-primary;
             color: $color-white;
             font-size: 10px;
             font-weight: 700;
@@ -1132,7 +1133,7 @@ onMounted(() => {
                 transform: translateX(-50%) rotate(45deg);
                 width: 0.5rem;
                 height: 0.5rem;
-                background-color: $color-black;
+                background-color: $color-primary;
             }
         }
     }

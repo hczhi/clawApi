@@ -69,7 +69,7 @@
                         <div class="form-group">
                             <label class="field-label">购买状态</label>
                             <div class="select-wrapper">
-                                <select v-model="state.purchasePlanForm.status" class="form-select" style="font-weight: 900;" :style="{color: state.purchasePlanForm.status === '已购买' ? '#34c759' : (state.purchasePlanForm.status === '取消' ? '#ff3b30' : '#111')}">
+                                <select v-model="state.purchasePlanForm.status" class="form-select" style="font-weight: 900;" :style="{color: state.purchasePlanForm.status === '已购买' ? '#6CA674' : (state.purchasePlanForm.status === '取消' ? '#D96C6C' : '#2A2522')}">
                                     <option value="计划">计划</option>
                                     <option value="取消">取消</option>
                                     <option value="已购买" disabled>已购买 (请在详情页操作)</option>
@@ -495,7 +495,7 @@ const saveForm = async () => {
         }
 
         &.active {
-            background-color: $color-black;
+            background-color: $color-primary;
             color: $color-white;
             @include shadow-soft;
             border-color: transparent;
@@ -561,7 +561,7 @@ const saveForm = async () => {
                 right: 0.5rem;
                 width: 6px;
                 height: 6px;
-                background-color: #34c759;
+                background-color: $color-success;
                 border-radius: 50%;
             }
 
@@ -571,7 +571,7 @@ const saveForm = async () => {
 
             &.active {
                 background-color: #fff;
-                color: #111;
+                color: $color-black;
                 box-shadow: 0 4px 12px rgba(0,0,0,0.05);
             }
         }
@@ -613,15 +613,15 @@ const saveForm = async () => {
                 }
 
                 &.is-active {
-                    color: #34c759;
+                    color: $color-success;
                     .radio-circle {
-                        border-color: #34c759;
+                        border-color: $color-success;
                         &::after {
                             content: '';
                             width: 0.5rem;
                             height: 0.5rem;
                             border-radius: 50%;
-                            background-color: #34c759;
+                            background-color: $color-success;
                         }
                     }
                 }
@@ -633,7 +633,7 @@ const saveForm = async () => {
                 gap: 0.25rem;
                 font-size: 12px;
                 font-weight: 700;
-                color: #ff3b30;
+                color: $color-danger;
                 opacity: 0.7;
                 transition: opacity 0.2s ease;
 
@@ -661,7 +661,7 @@ const saveForm = async () => {
 
     .btn-submit {
         width: 100%;
-        background-color: $color-black;
+        background-color: $color-primary;
         color: $color-white;
         padding: 1rem 0;
         border-radius: 9999px;

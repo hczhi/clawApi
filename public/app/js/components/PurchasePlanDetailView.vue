@@ -31,7 +31,7 @@
                         <span class="value">¥{{ helpers.formatAmount(state.currentPurchasePlan.estimated_budget) }}</span>
                     </div>
                     <div class="info-row" v-if="state.currentPurchasePlan?.actual_price">
-                        <span class="label">实付</span>
+                        <span class="label">{{ state.currentPurchasePlan?.status === '已购买' ? '实付' : '方案金额' }}</span>
                         <span class="value font-black">¥{{ helpers.formatAmount(state.currentPurchasePlan.actual_price) }}</span>
                     </div>
                     <div class="info-row" v-if="state.currentPurchasePlan?.buy_date">
@@ -59,6 +59,12 @@
                         <div class="plan-card-header">
                             <div class="plan-name-group">
                                 <span class="active-indicator" v-if="state.currentPurchasePlan?.selected_plan_id === planOption.id">当前选用</span>
+                                <button class="select-plan-btn" 
+                                        v-else-if="state.currentPurchasePlan?.status !== '已购买' && state.currentPurchasePlan?.status !== '取消' && parsedPlans.length > 1"
+                                        @click="actions.selectPurchasePlanOption(planOption.id)"
+                                        :disabled="state.saving">
+                                    {{ state.saving ? '设置中...' : '设为选用' }}
+                                </button>
                                 <h3 class="plan-name">{{ planOption.name || '方案' }}</h3>
                             </div>
                             <span class="plan-price" v-if="planOption.price">¥{{ helpers.formatAmount(planOption.price) }}</span>
@@ -119,17 +125,7 @@
                         <div class="btn-icon"><i data-lucide="check"></i></div>
                     </button>
                 </div>
-                <div class="logo-bottom animate-slide-right" style="animation-delay: 0.6s;">
-                    <i data-lucide="box" class="brand-icon"></i>
-                    <span class="logo-text">C.Lab / Purchase</span>
-                </div>
-            </div>
-        </div>
-
-        
-
-        <!-- Floating Edit Button -->
-        <div class="right-bottom-actions animate-fade-in-up" style="animation-delay: 0.5s;">
+                   <div class="right-bottom-actions animate-fade-in-up" style="animation-delay: 0.5s;">
             <button @click="actions.deletePurchasePlan" class="delete-float-btn group">
                 <span class="label">删除</span>
                 <div class="icon-wrap">
@@ -143,6 +139,19 @@
                 </div>
             </button>
         </div>
+                <div class="logo-bottom animate-slide-right" style="animation-delay: 0.6s;">
+                    <i data-lucide="box" class="brand-icon"></i>
+                    <span class="logo-text">C.Lab / Purchase</span>
+                </div>
+            </div>
+
+                <!-- Floating Edit Button -->
+     
+        </div>
+
+        
+
+    
 
         <!-- Purchase Modal -->
         <div v-if="state.purchaseModal.show" class="modal-overlay">
@@ -157,6 +166,10 @@
                         <input type="number" step="0.01" v-model="state.purchaseModal.data.actual_price" class="form-input" required placeholder="0.00">
                     </div>
                     <div class="form-group">
+                        <label class="field-label">购买日期</label>
+                        <input type="date" v-model="state.purchaseModal.data.buy_date" class="form-input" required>
+                    </div>
+                    <div class="form-group">
                         <label class="field-label">支付人</label>
                         <input type="text" v-model="state.purchaseModal.data.payer_names" class="form-input" placeholder="例如：张三, 李四">
                     </div>
@@ -169,6 +182,10 @@
                                 {{ method.label }}
                             </div>
                         </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="field-label">备注</label>
+                        <input type="text" v-model="state.purchaseModal.data.remark" class="form-input" placeholder="选填，记录一些额外信息">
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -210,12 +227,14 @@ onMounted(() => {
 </script>
 
 <style scoped lang="scss">
-$color-black: #111111;
-$color-white: #FAFAFA;
-$color-gray-100: rgba(17, 17, 17, 0.05);
-$color-gray-200: rgba(17, 17, 17, 0.1);
-$color-gray-500: rgba(17, 17, 17, 0.4);
-$color-gray-800: rgba(17, 17, 17, 0.8);
+$color-black: #2A2522;
+$color-white: #FAF9F6;
+$color-gray-100: rgba(42, 37, 34, 0.05);
+$color-gray-200: rgba(42, 37, 34, 0.1);
+$color-gray-500: rgba(42, 37, 34, 0.4);
+$color-gray-800: rgba(42, 37, 34, 0.8);
+$color-success: #6CA674;
+$color-danger: #D96C6C;
 
 .myhome-container {
     position: relative;
@@ -373,8 +392,8 @@ $color-gray-800: rgba(17, 17, 17, 0.8);
                 text-transform: uppercase;
 
                 &.status-planned { background-color: $color-gray-100; color: $color-gray-800; }
-                &.status-purchased { background-color: $color-black; color: $color-white; }
-                &.status-cancelled { background-color: transparent; border: 1px solid $color-gray-200; color: $color-gray-500; text-decoration: line-through; }
+                &.status-purchased { background-color: $color-success; color: $color-white; }
+                &.status-cancelled { background-color: transparent; border: 1px solid $color-danger; color: $color-danger; text-decoration: line-through; }
             }
         }
     }
@@ -426,16 +445,16 @@ $color-gray-800: rgba(17, 17, 17, 0.8);
         }
 
         &.purchase-btn {
-            background-color: $color-black;
+            background-color: #0bab21;
             color: $color-white;
-            border: 1px solid $color-black;
+            border: 1px solid $color-success;
             
             .btn-icon { background-color: rgba(255,255,255,0.15); i { color: $color-white; } }
             
             &:hover { 
                 background-color: transparent; 
-                color: $color-black;
-                .btn-icon { background-color: $color-gray-100; i { color: $color-black; transform: scale(1.1); } }
+                color: $color-primary;
+                .btn-icon { background-color: $color-gray-100; i { color: $color-primary; transform: scale(1.1); } }
             }
         }
     }
@@ -447,7 +466,8 @@ $color-gray-800: rgba(17, 17, 17, 0.8);
     align-items: flex-start;
     gap: 0.75rem;
     margin-top: auto;
-
+    position: relative;
+    top:-50px;
     .brand-icon {
         width: 1.5rem;
         height: 1.5rem;
@@ -562,13 +582,13 @@ $color-gray-800: rgba(17, 17, 17, 0.8);
         }
 
         &:hover {
-            transform: translateY(-8px);
+            // transform: translateY(-8px);
             box-shadow: 0 30px 60px rgba(0, 0, 0, 0.08);
         }
 
         &.is-active-plan {
             background: #ffffff;
-            border: 2px solid $color-black;
+            border: 2px solid #f8bf9d;
             box-shadow: 0 25px 50px rgba(0, 0, 0, 0.1);
         }
 
@@ -592,6 +612,31 @@ $color-gray-800: rgba(17, 17, 17, 0.8);
                     text-transform: uppercase;
                     letter-spacing: 0.1em;
                     width: fit-content;
+                }
+
+                .select-plan-btn {
+                    font-size: 10px;
+                    font-weight: 800;
+                    color: $color-white;
+                    background: $color-primary;
+                    padding: 0.25rem 0.75rem;
+                    border-radius: 9999px;
+                    text-transform: uppercase;
+                    letter-spacing: 0.1em;
+                    width: fit-content;
+                    cursor: pointer;
+                    transition: all 0.2s ease;
+                    border: 1px solid $color-primary;
+                    outline: none;
+
+                    &:hover {
+                        background: transparent;
+                        color: $color-primary;
+                    }
+                    &:disabled {
+                        opacity: 0.5;
+                        cursor: not-allowed;
+                    }
                 }
 
                 .plan-name {
@@ -723,14 +768,11 @@ $color-gray-800: rgba(17, 17, 17, 0.8);
 
 /* Floating Actions */
 .right-bottom-actions {
-    position: absolute;
-    bottom: 2rem;
-    right: 2rem;
     z-index: 20;
     display: flex;
     align-items: center;
     gap: 1rem;
-
+        justify-content: flex-end;
     @media (min-width: 640px) {
         bottom: 4rem;
         right: 4rem;
@@ -782,7 +824,7 @@ $color-gray-800: rgba(17, 17, 17, 0.8);
         padding-left: 1.5rem;
         padding-right: 0.5rem;
         border-radius: 9999px;
-        background-color: $color-black;
+        background-color: $color-primary;
         color: $color-white;
         display: flex;
         align-items: center;
@@ -820,11 +862,11 @@ $color-gray-800: rgba(17, 17, 17, 0.8);
 
 /* Modal styles */
 .modal-overlay {
-    position: fixed; inset: 0; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); z-index: 100; display: flex; align-items: flex-end;
+    position: fixed; inset: 0; background: rgba(255, 255, 255, 0.4); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(20px); z-index: 100; display: flex; align-items: flex-end;
     @media (min-width: 768px) { align-items: center; justify-content: center; }
 }
 .modal-content {
-    background: #ffffff; width: 100%; max-width: 500px; border-radius: 2rem 2rem 0 0; padding: 2.5rem; box-shadow: 0 -20px 60px rgba(0,0,0,0.05);
+    background: #ffffff; width: 100%; border-radius: 2rem 2rem 0 0; padding: 2.5rem; box-shadow: 0 -20px 60px rgba(0,0,0,0.05);
     @media (min-width: 768px) { border-radius: 2rem; box-shadow: 0 30px 60px rgba(0,0,0,0.1); }
 }
 .modal-header {
@@ -851,13 +893,13 @@ $color-gray-800: rgba(17, 17, 17, 0.8);
     .chip { 
         background-color: $color-gray-100; padding: 0.875rem 1.5rem; border-radius: 9999px; font-size: 13px; font-weight: 700; color: $color-gray-800; cursor: pointer; transition: all 0.2s ease; user-select: none; border: 1px solid transparent;
         &:hover { background-color: $color-gray-200; }
-        &.active { background-color: $color-black; color: $color-white; border-color: $color-black; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+        &.active { background-color: $color-primary; color: $color-white; border-color: $color-primary; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
     }
 }
 .modal-footer {
     margin-top: 2.5rem;
     .btn-submit { 
-        width: 100%; background: $color-black; color: $color-white; padding: 1.25rem; border-radius: 9999px; font-weight: 800; font-size: 14px; letter-spacing: 0.1em; text-transform: uppercase; transition: all 0.2s; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        width: 100%; background: $color-primary; color: $color-white; padding: 1.25rem; border-radius: 9999px; font-weight: 800; font-size: 14px; letter-spacing: 0.1em; text-transform: uppercase; transition: all 0.2s; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
         &:hover { transform: translateY(-2px); box-shadow: 0 15px 40px rgba(0,0,0,0.2); }
         &:active { transform: scale(0.98); } 
         &:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; } 

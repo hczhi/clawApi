@@ -174,7 +174,7 @@ const { state, constants, computedProps, helpers, actions } = useAppStore();
     text-transform: uppercase;
 
     &.tag-primary {
-        background: $color-black;
+        background: $color-primary;
         color: $color-white;
         box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
     }
@@ -276,7 +276,7 @@ const { state, constants, computedProps, helpers, actions } = useAppStore();
 
 .btn-edit {
     flex: 1;
-    background: $color-black;
+    background: $color-primary;
     color: $color-white;
     padding: 1rem 0;
     border-radius: 9999px;
@@ -295,7 +295,7 @@ const { state, constants, computedProps, helpers, actions } = useAppStore();
     width: 4rem;
     flex-shrink: 0;
     background: $color-white;
-    color: #ff3b30;
+    color: $color-danger;
     border: 1px solid rgba($color-black, 0.05);
     display: flex;
     align-items: center;

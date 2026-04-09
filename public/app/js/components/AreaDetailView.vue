@@ -136,9 +136,9 @@
                                     </div>
                                 </div>
                                 <div class="item-right">
-                                    <div class="item-amount" v-if="plan.actual_price" :style="{color: plan.status === '已购买' ? '#34c759' : '#111'}">¥{{ helpers.formatAmount(plan.actual_price) }}</div>
-                                    <div class="item-amount" v-else style="color: #888; font-size: 14px;">未报价</div>
-                                    <div class="item-method" :style="{color: plan.status === '已购买' ? '#34c759' : (plan.status === '取消' ? '#ff3b30' : '#111')}">{{ plan.status }}</div>
+                                    <div class="item-amount" v-if="plan.actual_price" :style="{color: plan.status === '已购买' ? '#6CA674' : '#2A2522'}">¥{{ helpers.formatAmount(plan.actual_price) }}</div>
+                                    <div class="item-amount" v-else style="color: rgba(0,0,0,0.4); font-size: 14px;">未报价</div>
+                                    <div class="item-method" :style="{color: plan.status === '已购买' ? '#6CA674' : (plan.status === '取消' ? '#D96C6C' : '#2A2522')}">{{ plan.status }}</div>
                                 </div>
                             </div>
                         </div>
@@ -348,7 +348,7 @@ onMounted(() => {
                     width: 0.5rem;
                     height: 0.5rem;
                     border-radius: 50%;
-                    background-color: $color-black;
+                    background-color: $color-primary;
                     display: inline-block;
                     animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
                 }
@@ -369,7 +369,7 @@ onMounted(() => {
             width: 3.5rem;
             height: 3.5rem;
             border-radius: 9999px;
-            background-color: $color-black;
+            background-color: $color-primary;
             color: $color-white;
             box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
             @include flex-center;
@@ -505,7 +505,7 @@ onMounted(() => {
 
     .btn-primary {
         padding: 0.75rem 2rem;
-        background-color: $color-black;
+        background-color: $color-primary;
         color: $color-white;
         border-radius: 9999px;
         font-size: 0.75rem; line-height: 1rem;

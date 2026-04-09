@@ -115,7 +115,7 @@ CREATE TABLE IF NOT EXISTS design_concepts (
 CREATE TABLE IF NOT EXISTS purchase_plans (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     item_name TEXT NOT NULL,
-    category_id TEXT NOT NULL,
+    category_id INTEGER NOT NULL,
     purchase_method TEXT CHECK(purchase_method IN ('线下', '淘宝', '京东', '其他')) DEFAULT '其他',
     decoration_area TEXT CHECK(decoration_area IN ('客厅', '卧室', '卫浴', '厨房', '阳台', '过道')),
     estimated_budget DECIMAL(12,2),
@@ -128,7 +128,8 @@ CREATE TABLE IF NOT EXISTS purchase_plans (
     selected_plan_id TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    notes TEXT
+    notes TEXT,
+    FOREIGN KEY(category_id) REFERENCES expense_categories(id)
 );
 
 -- 7. 日程进度表

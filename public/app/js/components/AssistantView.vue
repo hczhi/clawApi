@@ -278,7 +278,7 @@ onMounted(() => {
     transition: all 0.3s ease;
 
     .msg-user & {
-        background: $color-black;
+        background: $color-primary;
         color: $color-white;
         border-top-right-radius: 0.125rem;
     }
@@ -384,7 +384,7 @@ onMounted(() => {
     width: 44px;
     height: 44px;
     border-radius: 50%;
-    background: $color-black;
+    background: $color-primary;
     color: $color-white;
     display: flex;
     align-items: center;

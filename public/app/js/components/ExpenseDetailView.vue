@@ -262,7 +262,7 @@ const { state, constants, computedProps, helpers, actions } = useAppStore();
 
     .btn-edit {
         flex: 1;
-        background-color: $color-black;
+        background-color: $color-primary;
         color: $color-white;
         padding: 1rem 0;
         border-radius: 9999px;

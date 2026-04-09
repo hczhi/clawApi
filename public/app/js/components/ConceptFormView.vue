@@ -153,7 +153,7 @@ const { state, constants, computedProps, helpers, actions } = useAppStore();
     border: 1px solid transparent;
 
     &.is-active {
-        background: $color-black;
+        background: $color-primary;
         color: $color-white;
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     }
@@ -282,7 +282,7 @@ const { state, constants, computedProps, helpers, actions } = useAppStore();
 
 .submit-btn {
     width: 100%;
-    background: $color-black;
+    background: $color-primary;
     color: $color-white;
     padding: 1rem 0;
     border-radius: 1.25rem;

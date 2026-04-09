@@ -63,7 +63,7 @@
                                 </div>
                                 <div class="card-right">
                                     <p class="card-amount" v-if="plan.actual_price">¥{{ helpers.formatAmount(plan.actual_price) }}</p>
-                                    <p class="card-amount" v-else style="color: #888; font-size: 14px;">未报价</p>
+                                    <p class="card-amount" v-else style="color: rgba(0,0,0,0.4); font-size: 14px;">未报价</p>
                                     <span class="status-badge" :class="plan.status === '已购买' ? 'status-purchased' : (plan.status === '取消' ? 'status-cancelled' : 'status-planned')">{{ plan.status }}</span>
                                 </div>
                             </div>
@@ -250,7 +250,7 @@ const totalPurchaseAmount = computed(() => {
             width: 0.5rem;
             height: 0.5rem;
             border-radius: 50%;
-            background-color: $color-black;
+            background-color: $color-primary;
             box-shadow: 0 0 0 6px $color-white;
         }
 
@@ -376,12 +376,12 @@ const totalPurchaseAmount = computed(() => {
                 color: rgba(0, 0, 0, 0.6);
             }
             &.status-purchased {
-                background-color: rgba(52, 199, 89, 0.1);
-                color: #34c759;
+                background-color: rgba(108, 166, 116, 0.1); /* $color-success */
+                color: $color-success;
             }
             &.status-cancelled {
-                background-color: rgba(255, 59, 48, 0.1);
-                color: #ff3b30;
+                background-color: rgba(217, 108, 108, 0.1); /* $color-danger */
+                color: $color-danger;
             }
         }
     }
