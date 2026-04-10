@@ -581,7 +581,6 @@ onMounted(() => {
         align-items: center;
         justify-content: space-between;
         background-color: transparent;
-        border-radius: 2rem;
         transition: all 0.5s ease;
         cursor: pointer;
         padding-bottom: 0.5rem;

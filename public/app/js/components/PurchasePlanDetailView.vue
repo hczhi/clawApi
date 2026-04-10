@@ -295,7 +295,6 @@ $color-danger: #D96C6C;
     transition: all 0.5s ease-out;
 
     @media (min-width: 640px) {
-        width: 35%;
         height: 100%;
         border-radius: 0 2rem 2rem 0;
         border-bottom: none;
@@ -493,8 +492,7 @@ $color-danger: #D96C6C;
 
     @media (min-width: 640px) {
         top: 0;
-        left: 35%;
-        width: 65%;
+      
         height: 100%;
     }
 }
