@@ -35,6 +35,20 @@
                 <button v-if="['expenses', 'concepts', 'purchase-plans'].includes(state.currentView)" @click="actions.navigate(state.currentView === 'expenses' ? 'expense-form' : state.currentView === 'concepts' ? 'concept-form' : 'purchase-plan-form', { mode: 'add' })" class="icon-btn">
                     <i data-lucide="plus" class="text-black"></i>
                 </button>
+                <div v-if="state.currentView === 'memo-detail'" class="actions" style="display: flex; gap: 0.75rem;">
+                    <button class="icon-btn" @click="actions.editMemo(state.currentMemo)" aria-label="Edit">
+                        <i data-lucide="edit-2"></i>
+                    </button>
+                    <button class="icon-btn" @click="actions.deleteMemo()" aria-label="Delete">
+                        <i data-lucide="trash-2"></i>
+                    </button>
+                </div>
+                <div v-if="state.currentView === 'memo-form'" class="actions" style="display: flex;">
+                    <button class="icon-btn" @click="actions.saveMemo()" :disabled="state.saving" aria-label="Save" style="background: var(--color-primary, #f08007); color: white;">
+                        <i v-if="!state.saving" data-lucide="check"></i>
+                        <i v-else data-lucide="loader" class="spin"></i>
+                    </button>
+                </div>
             </div>
         </header>
 

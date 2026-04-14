@@ -38,6 +38,11 @@
                     <span class="indicator"></span>
                     清单
                 </button>
+
+                <button @click.stop.prevent="actions.navigate('memos')" class="menu-item">
+                    <span class="indicator"></span>
+                    备忘
+                </button>
                 
                 <button @click.stop.prevent="actions.navigate('myhome')" class="menu-item">
                     <span class="indicator"></span>

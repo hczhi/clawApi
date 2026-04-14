@@ -79,6 +79,17 @@ const state = reactive({
         }
     },
 
+    memos: [],
+    currentMemo: null,
+    memoForm: {
+        title: '',
+        content: '',
+        tags: [],
+        image_urls: '[]',
+        link_url: ''
+    },
+    memoImagesPreview: [],
+
     previewModal: {
         show: false,
         imageUrl: ''
@@ -139,7 +150,10 @@ const computedProps = {
             'assistant': 'AI 助手',
             'myhome': '',
             'edit-home': '编辑户型',
-            'area-detail': state.currentArea ? `${state.currentArea}详情` : '空间详情'
+            'area-detail': state.currentArea ? `${state.currentArea}详情` : '空间详情',
+            'memos': '备忘录',
+            'memo-detail': '备忘录详情',
+            'memo-form': state.memoForm.id ? '编辑备忘录' : '添加备忘录'
         };
         return titles[state.currentView] || '';
     }),
@@ -158,7 +172,10 @@ const computedProps = {
             'assistant': 'AssistantView',
             'myhome': 'MyHomeView',
             'edit-home': 'EditHomeView',
-            'area-detail': 'AreaDetailView'
+            'area-detail': 'AreaDetailView',
+            'memos': 'MemosView',
+            'memo-detail': 'MemoDetailView',
+            'memo-form': 'MemoFormView'
         };
         return map[state.currentView] || 'HomeView';
     })
@@ -606,6 +623,66 @@ const actions = {
             state.saving = false;
         }
     },
+    // ==========================================
+    // Memos Actions
+    // ==========================================
+    fetchMemos: async () => {
+        state.loading = true;
+        try {
+            const res = await axios.get('/api/memos');
+            if (res.data.success) state.memos = res.data.data;
+        } catch (error) { console.error('Failed to fetch memos:', error); }
+        finally { state.loading = false; helpers.updateIcons(); }
+    },
+    fetchMemoDetail: async (id) => {
+        state.loading = true;
+        try {
+            const res = await axios.get(`/api/memos/${id}`);
+            if (res.data.success) {
+                state.currentMemo = res.data.data;
+                actions.navigate('memo-detail');
+            }
+        } catch (error) { console.error('Failed to fetch memo:', error); }
+        finally { state.loading = false; helpers.updateIcons(); }
+    },
+    editMemo: (memo = null) => {
+        if (memo) {
+            state.memoForm = { 
+                ...memo, 
+                tags: Array.isArray(memo.tags) ? memo.tags : JSON.parse(memo.tags || '[]'), 
+                image_urls: typeof memo.image_urls === 'string' ? memo.image_urls : JSON.stringify(memo.image_urls || []) 
+            };
+            state.memoImagesPreview = JSON.parse(state.memoForm.image_urls || '[]');
+        } else {
+            state.memoForm = { title: '', content: '', tags: [], image_urls: '[]', link_url: '' };
+            state.memoImagesPreview = [];
+        }
+        actions.navigate('memo-form');
+    },
+    saveMemo: async () => {
+        if (!state.memoForm.title && !state.memoForm.content) return alert('请输入标题或内容');
+        state.saving = true;
+        try {
+            const payload = { ...state.memoForm, tags: state.memoForm.tags };
+            let res = payload.id ? await axios.put(`/api/memos/${payload.id}`, payload) : await axios.post('/api/memos', payload);
+            if (res.data.success) {
+                await actions.fetchMemos();
+                actions.goBack();
+            }
+        } catch (error) { alert('保存失败，请重试'); }
+        finally { state.saving = false; }
+    },
+    deleteMemo: async () => {
+        if (!confirm('确定要删除此备忘录吗？')) return;
+        try {
+            const res = await axios.delete(`/api/memos/${state.currentMemo.id}`);
+            if (res.data.success) {
+                await actions.fetchMemos();
+                actions.goBack();
+            }
+        } catch (error) { alert('删除失败，请重试'); }
+    },
+
     fetchFloorPlan: async () => {
         try {
             const res = await axios.get('/api/floor-plans');

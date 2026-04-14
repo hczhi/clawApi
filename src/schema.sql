@@ -227,6 +227,18 @@ CREATE TABLE IF NOT EXISTS floor_plans (
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
+-- 12. 备忘录表
+CREATE TABLE IF NOT EXISTS memos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT,
+    content TEXT,
+    tags TEXT,
+    image_urls TEXT,
+    link_url TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
 -- -----------------------------
 -- 辅助视图
 -- -----------------------------

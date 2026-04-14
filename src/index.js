@@ -21,6 +21,7 @@ const categoriesRouter = require('./routes/categories');
 const healthRouter = require('./routes/health');
 const aiChatRouter = require('./routes/ai-chat');
 const floorPlansRouter = require('./routes/floor-plans');
+const memosRouter = require('./routes/memos');
 
 // 初始化 Express 应用
 const app = express();
@@ -58,6 +59,7 @@ app.use('/api/vendors', vendorsRouter);
 app.use('/api/categories', categoriesRouter);
 app.use('/api/ai-chat', aiChatRouter);
 app.use('/api/floor-plans', floorPlansRouter);
+app.use('/api/memos', memosRouter);
 
 // 根路径欢迎
 app.get('/', (req, res) => {
