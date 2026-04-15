@@ -39,6 +39,11 @@
                     清单
                 </button>
 
+                <button @click.stop.prevent="actions.navigate('schedules')" class="menu-item">
+                    <span class="indicator"></span>
+                    日程
+                </button>
+
                 <button @click.stop.prevent="actions.navigate('memos')" class="menu-item">
                     <span class="indicator"></span>
                     备忘

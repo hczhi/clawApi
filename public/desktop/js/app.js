@@ -74,6 +74,8 @@ const app = createApp({
 
 // 全局注册 Desktop 主视图组件
 app.component('DesktopDashboard', loadDesktopComponent('DesktopDashboard'));
+app.component('DashboardScheduleWidget', loadDesktopComponent('dashboard/DashboardScheduleWidget'));
+app.component('DashboardMemos', loadDesktopComponent('dashboard/DashboardMemos'));
 app.component('DesktopExpenses', loadDesktopComponent('DesktopExpenses'));
 app.component('DesktopConcepts', loadDesktopComponent('DesktopConcepts'));
 app.component('DesktopPurchasePlans', loadDesktopComponent('DesktopPurchasePlans'));
@@ -83,6 +85,7 @@ app.component('DesktopMemos', loadDesktopComponent('DesktopMemos'));
 app.component('DesktopExpenseDetail', loadDesktopComponent('DesktopExpenseDetail'));
 app.component('DesktopPurchasePlanDetail', loadDesktopComponent('DesktopPurchasePlanDetail'));
 app.component('DesktopMemoDetail', loadDesktopComponent('DesktopMemoDetail'));
+app.component('DesktopScheduleDetail', loadDesktopComponent('DesktopScheduleDetail'));
 
 // 全局注册 Mobile 组件（用于弹窗/表单复用）
 app.component('ExpenseDetailView', loadMobileComponent('ExpenseDetailView'));
@@ -93,6 +96,7 @@ app.component('PurchasePlanDetailView', loadMobileComponent('PurchasePlanDetailV
 app.component('PurchasePlanFormView', loadMobileComponent('PurchasePlanFormView'));
 app.component('MemoDetailView', loadMobileComponent('MemoDetailView'));
 app.component('MemoFormView', loadMobileComponent('MemoFormView'));
+app.component('ScheduleFormView', loadMobileComponent('ScheduleFormView'));
 app.component('AreaDetailView', loadMobileComponent('AreaDetailView'));
 
 app.mount('#app');

@@ -75,7 +75,10 @@ const app = createApp({
         AreaDetailView: loadVueComponent('AreaDetailView'),
         MemosView: loadVueComponent('MemosView'),
         MemoDetailView: loadVueComponent('MemoDetailView'),
-        MemoFormView: loadVueComponent('MemoFormView')
+        MemoFormView: loadVueComponent('MemoFormView'),
+        SchedulesView: loadVueComponent('SchedulesView'),
+        ScheduleDetailView: loadVueComponent('ScheduleDetailView'),
+        ScheduleFormView: loadVueComponent('ScheduleFormView')
     },
     setup() {
         const store = useAppStore();

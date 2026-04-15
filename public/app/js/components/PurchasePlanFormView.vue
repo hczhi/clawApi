@@ -195,8 +195,8 @@
                                                 <i data-lucide="x" class="icon-small"></i>
                                             </button>
                                         </div>
-                                        <div v-if="state.purchasePlanImagesPreview.length < 5" class="upload-btn-wrapper">
-                                            <label class="upload-label" :class="{ 'is-uploading': state.uploadingImages }">
+                                        <div v-if="state.purchasePlanImagesPreview.length < 5" class="upload-action-btn">
+                                            <label class="btn-add-image" :class="{ 'is-uploading': state.uploadingImages }">
                                                 <input type="file" multiple accept="image/*" @change="actions.handlePurchasePlanImageUpload" class="hidden-input" style="display: none;" :disabled="state.uploadingImages" />
                                                 <i v-if="!state.uploadingImages" data-lucide="camera" class="upload-icon"></i>
                                                 <i v-else data-lucide="loader" class="upload-icon spin"></i>
@@ -354,7 +354,6 @@ const saveForm = async () => {
     position: relative;
     display: flex;
     flex-direction: column;
-    padding-top: 4rem;
     overflow-y: auto;
 }
 
@@ -386,7 +385,6 @@ const saveForm = async () => {
     padding: 1.5rem;
     position: relative;
     z-index: 10;
-    max-width: 600px;
     margin: 0 auto;
     width: 100%;
 }
@@ -647,6 +645,53 @@ const saveForm = async () => {
                 }
             }
         }
+    }
+}
+
+.upload-action-btn {
+    width: 100%;
+    grid-column: 1 / -1;
+    margin-top: 0.5rem;
+}
+
+.btn-add-image {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.25rem;
+    background-color: rgba(0, 0, 0, 0.03);
+    border-radius: 9999px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+
+    &:hover {
+        background-color: rgba(0, 0, 0, 0.06);
+    }
+
+    &:active {
+        transform: scale(0.96);
+    }
+
+    &.is-uploading {
+        opacity: 0.6;
+        pointer-events: none;
+    }
+
+    .upload-icon {
+        width: 1.25rem;
+        height: 1.25rem;
+        color: rgba(0, 0, 0, 0.6);
+        
+        &.spin {
+            animation: spin 1s linear infinite;
+        }
+    }
+
+    .upload-text {
+        font-size: 13px;
+        font-weight: 700;
+        color: rgba(0, 0, 0, 0.6);
     }
 }
 

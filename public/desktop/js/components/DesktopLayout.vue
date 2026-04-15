@@ -132,6 +132,8 @@ const overlayViewComponent = computed(() => {
         'purchase-plan-form': 'PurchasePlanFormView',
         'memo-detail': 'DesktopMemoDetail',
         'memo-form': 'MemoFormView',
+        'schedule-detail': 'DesktopScheduleDetail',
+        'schedule-form': 'ScheduleFormView',
         'area-detail': 'AreaDetailView'
     };
     return map[overlayView.value] || null;

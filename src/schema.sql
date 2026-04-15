@@ -239,6 +239,21 @@ CREATE TABLE IF NOT EXISTS memos (
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
+-- 13. 日程表
+CREATE TABLE IF NOT EXISTS schedules (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    start_date DATE NOT NULL,
+    end_date DATE,
+    type TEXT DEFAULT 'custom',
+    related_id INTEGER,
+    color TEXT,
+    notes TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+
 -- -----------------------------
 -- 辅助视图
 -- -----------------------------

@@ -182,6 +182,18 @@ router.post('/', (req, res) => {
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `, [category_id, quote_id || null, title, amount, payment_method || 'cash', payer_names || null, payment_date, receipt_file_path || null, image_urls || null, vendor_id || null, reimbursement_status || 'not_required', tags || null, notes || null, decoration_area || null]);
     
+    const expenseId = result.lastInsertRowid;
+    
+    // 自动同步一条数据给日程
+    try {
+      db.run(`
+        INSERT INTO schedules (title, start_date, end_date, type, related_id, color, notes)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `, [`账单: ${title}`, payment_date, payment_date, 'expense', expenseId, '#ff6b52', notes || '']);
+    } catch (scheduleErr) {
+      console.error('自动同步日程失败:', scheduleErr);
+    }
+
     const newExpense = db.get(`
       SELECT 
         e.*,

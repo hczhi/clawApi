@@ -90,6 +90,17 @@ const state = reactive({
     },
     memoImagesPreview: [],
 
+    schedules: [],
+    currentSchedule: null,
+    scheduleForm: {
+        title: '',
+        start_date: dayjs().format('YYYY-MM-DD'),
+        end_date: '',
+        type: 'custom',
+        color: '#ff6b52',
+        notes: ''
+    },
+
     previewModal: {
         show: false,
         imageUrl: ''
@@ -153,7 +164,10 @@ const computedProps = {
             'area-detail': state.currentArea ? `${state.currentArea}详情` : '空间详情',
             'memos': '备忘录',
             'memo-detail': '备忘录详情',
-            'memo-form': state.memoForm.id ? '编辑备忘录' : '添加备忘录'
+            'memo-form': state.memoForm.id ? '编辑备忘录' : '添加备忘录',
+            'schedules': '日程安排',
+            'schedule-detail': '日程详情',
+            'schedule-form': state.scheduleForm.id ? '编辑日程' : '添加日程'
         };
         return titles[state.currentView] || '';
     }),
@@ -175,7 +189,10 @@ const computedProps = {
             'area-detail': 'AreaDetailView',
             'memos': 'MemosView',
             'memo-detail': 'MemoDetailView',
-            'memo-form': 'MemoFormView'
+            'memo-form': 'MemoFormView',
+            'schedules': 'SchedulesView',
+            'schedule-detail': 'ScheduleDetailView',
+            'schedule-form': 'ScheduleFormView'
         };
         return map[state.currentView] || 'HomeView';
     })
@@ -294,6 +311,26 @@ const actions = {
             actions.fetchFloorPlan();
         } else if (view === 'area-detail' && params?.area) {
             state.currentArea = params.area;
+        } else if (view === 'schedules') {
+            actions.fetchSchedules();
+        } else if (view === 'schedule-detail' && params?.id) {
+            state.currentSchedule = state.schedules.find(s => s.id === params.id);
+        } else if (view === 'schedule-form') {
+            if (params?.mode === 'edit' && params?.id) {
+                const schedule = state.schedules.find(s => s.id === params.id) || state.currentSchedule;
+                if (schedule) {
+                    state.scheduleForm = { ...schedule };
+                }
+            } else {
+                state.scheduleForm = {
+                    title: '',
+                    start_date: dayjs().format('YYYY-MM-DD'),
+                    end_date: '',
+                    type: 'custom',
+                    color: '#ff6b52',
+                    notes: ''
+                };
+            }
         }
 
         state.viewHistory.push(view);
@@ -489,6 +526,40 @@ const actions = {
     removePurchasePlanImage: (index) => {
         state.purchasePlanImagesPreview.splice(index, 1);
         state.purchasePlanForm.image_urls = JSON.stringify(state.purchasePlanImagesPreview);
+    },
+    fetchSchedules: async () => {
+        try {
+            const res = await axios.get('/api/schedules');
+            state.schedules = res.data;
+        } catch (error) { console.error('Failed to fetch schedules:', error); }
+    },
+    saveSchedule: async (scheduleData) => {
+        try {
+            const res = scheduleData.id 
+                ? await axios.put(`/api/schedules/${scheduleData.id}`, scheduleData) 
+                : await axios.post('/api/schedules', scheduleData);
+            if (res.status === 200 || res.status === 201) {
+                await actions.fetchSchedules();
+                return true;
+            }
+            return false;
+        } catch (error) { 
+            console.error('Failed to save schedule:', error); 
+            return false;
+        }
+    },
+    deleteSchedule: async (id) => {
+        try {
+            const res = await axios.delete(`/api/schedules/${id}`);
+            if (res.data.success) {
+                await actions.fetchSchedules();
+                return true;
+            }
+            return false;
+        } catch (error) { 
+            console.error('Failed to delete schedule:', error); 
+            return false;
+        }
     },
     fetchPurchasePlans: async () => {
         state.loading = true;
