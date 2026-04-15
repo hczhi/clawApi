@@ -3,7 +3,7 @@
         <div class="dashboard-layout">
             <!-- Left Column -->
             <div class="left-col">
-                <div class="header-area">
+                <div class="header-area" style="flex-shrink: 0;">
                     <h1 class="main-title">雍容南台<br>装修工作台</h1>
                     <div class="quick-actions">
                         <button class="pill-btn" @click="actions.navigate('expense-form', { mode: 'add' })">记一笔账</button>
@@ -21,9 +21,9 @@
               
 
                 <!-- Memos Feed Section -->
-                <dashboard-memos></dashboard-memos>
+                <dashboard-memos style="flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden;"></dashboard-memos>
 
-                <div class="bottom-left-section" style="display: flex; justify-content: space-between; align-items: flex-end; padding-right: 2rem;">
+                <div class="bottom-left-section" style="flex-shrink: 0; display: flex; justify-content: space-between; align-items: flex-end; padding-right: 2rem;">
                     <div class="expense-section">
                         <div class="expense-header">
                             <span class="label">总支出 (元)</span>
@@ -39,14 +39,14 @@
             <!-- Right Column -->
             <div class="right-col">
                 <!-- Purchase Plans Card -->
-                <div class="card progress-card">
-                    <div class="card-header" style="margin-bottom: 1rem;">
+                <div class="card progress-card" style="display: flex; flex-direction: column;">
+                    <div class="card-header" style="flex-shrink: 0; margin-bottom: 1rem;">
                         <span class="label">购买清单</span>
                         <!-- <span class="circle-btn"  @click="actions.navigate('purchase-plans')">全部</span> -->
                     </div>
                     
                     <!-- Area Filters -->
-                    <div class="area-filters" style="display: flex; gap: 0.5rem; overflow-x: auto; padding-bottom: 0.5rem; margin-bottom: 1rem;">
+                    <div class="area-filters" style="flex-shrink: 0; display: flex; gap: 0.5rem; overflow-x: auto; padding-bottom: 0.5rem; margin-bottom: 1rem;">
                         <button v-for="area in availableAreas" :key="area" 
                             @click="currentAreaFilter = area"
                             class="filter-chip" 
@@ -55,7 +55,7 @@
                         </button>
                     </div>
 
-                    <div class="list-items" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; justify-content: flex-start; gap: 1rem; padding-right: 0.5rem;">
+                    <div class="list-items" style="flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; justify-content: flex-start; gap: 1rem; padding-right: 0.5rem;">
                         <div v-if="filteredPurchasePlans.length === 0" class="empty-text">暂无待购清单</div>
                         <div v-for="plan in filteredPurchasePlans" :key="plan.id" class="list-row" @click.stop="actions.navigate('purchase-plan-detail', { id: plan.id })" style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0;">
                             <div class="row-info" style="display: flex; align-items: center; gap: 0.5rem;">
@@ -68,7 +68,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="card-footer" style="padding-top: 1rem; border-top: 1px solid rgba(0,0,0,0.05); margin-top: 1rem;">
+                    <div class="card-footer" style="flex-shrink: 0; padding-top: 1rem; border-top: 1px solid rgba(0,0,0,0.05); margin-top: 1rem;">
                         <div class="footer-info">
                             <span class="footer-title">{{ currentAreaFilter === '全部区域' ? '全部' : currentAreaFilter }}总预算/支出</span>
                             <span class="footer-sub">包含 {{ pendingPlans.length }} 个计划中项目</span>
@@ -80,13 +80,13 @@
                 </div>
 
                 <!-- Inspiration Wall Card (Concepts) -->
-                <div class="card list-card" @click="actions.navigate('concepts')" style="padding: 0; background: transparent; box-shadow: none; border-radius: 0px;">
-                    <div class="card-header" style="margin-bottom: 1.5rem; padding: 0;">
+                <div class="card list-card" @click="actions.navigate('concepts')" style="display: flex; flex-direction: column; padding: 0; background: transparent; box-shadow: none; border-radius: 0px;">
+                    <div class="card-header" style="flex-shrink: 0; margin-bottom: 1.5rem; padding: 0;">
                         <span class="label" style="font-size: 1.2rem; font-weight: 800; color: var(--color-text-main); letter-spacing: -0.02em;">灵感墙</span>
                         <span class="circle-btn" style="width: auto; padding: 0 1rem; border-radius: 100px; background: var(--color-card-white); border: 1px solid rgba(0,0,0,0.05); font-weight: 600;">浏览全部</span>
                     </div>
                     
-                    <div class="concepts-grid hide-scrollbar" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; overflow-y: auto; padding-bottom: 1rem;">
+                    <div class="concepts-grid hide-scrollbar" style="flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; overflow-y: auto; padding-bottom: 1rem;">
                         <div v-if="state.concepts.length === 0" class="empty-text" style="grid-column: span 2; padding: 3rem; text-align: center; background: var(--color-card-white); border-radius: 24px; color: var(--color-text-muted);">暂无灵感数据</div>
                         
                         <div v-for="(concept, index) in state.concepts.slice(0, 6)" :key="concept.id" 
@@ -168,16 +168,20 @@ onMounted(() => {
 .workspace-container {
     width: 100%;
     margin: 0 auto;
-    padding: 3rem;
-    height: 100%;
+    padding: 2rem 3rem;
+    flex: 1;
     box-sizing: border-box;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
 }
 
 .dashboard-layout {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 3rem;
-    height: 100%;
+    flex: 1;
+    min-height: 0;
 }
 
 /* Typography & Globals */
@@ -207,9 +211,10 @@ h1, h2, h3 {
 .left-col {
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
     position: relative;
-    padding-bottom: 2rem;
+    padding-bottom: 1rem;
+    min-height: 0;
+    gap: 1.5rem;
 }
 
 .header-area {
@@ -218,11 +223,11 @@ h1, h2, h3 {
 }
 
 .main-title {
-    font-size: 4rem;
+    font-size: 3.5rem;
     line-height: 1.1;
     color: var(--color-text-main);
     letter-spacing: -0.02em;
-    margin-bottom: 2.5rem;
+    margin-bottom: 1.5rem;
 }
 
 .quick-actions {
@@ -230,8 +235,8 @@ h1, h2, h3 {
     flex-direction: column;
     gap: 1.5rem;
     position: absolute;
-    left: 0px;
-    top: 360px;
+    left: -2rem;
+    top: 40%;
     transform: translateY(-50%);
     background: rgba(255, 255, 255, 0.8);
     backdrop-filter: blur(10px);
@@ -318,7 +323,7 @@ h1, h2, h3 {
     }
 
     .hero-number {
-        font-size: 4.5rem;
+        font-size: 3.5rem;
         color: var(--color-text-main);
         letter-spacing: -0.02em;
         margin-bottom: 0;
@@ -372,19 +377,21 @@ h1, h2, h3 {
     flex-direction: column;
     gap: 2rem;
     overflow: hidden;
-    height: 100%;
+    flex: 1;
+    min-height: 0;
 }
 
 .card {
     background: var(--color-card-white);
     border-radius: 32px;
-    padding: 2.5rem;
+    padding: 2rem;
     box-shadow: var(--shadow-soft);
     display: flex;
     flex-direction: column;
     cursor: pointer;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     overflow: hidden;
+    min-height: 0;
 
     &:hover {
         transform: translateY(-5px);

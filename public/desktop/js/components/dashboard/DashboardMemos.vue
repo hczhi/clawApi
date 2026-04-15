@@ -7,7 +7,7 @@
                 <span>浏览全部</span>
             </button>
         </div> -->
-        <div class="feed-list hide-scrollbar" style="flex: 1; overflow-y: auto; padding-right: 1.5rem; display: flex; flex-direction: column; gap: 1.5rem; position: relative; z-index: 2;">
+        <div class="feed-list hide-scrollbar" style="flex: 1; min-height: 0; overflow-y: auto; padding-right: 1.5rem; display: flex; flex-direction: column; gap: 1.5rem; position: relative; z-index: 2;">
             <div v-if="state.memos.length === 0" class="empty-text" style="padding: 3rem; text-align: center; color: var(--color-text-muted); background: var(--color-card-white); border-radius: 24px; border: 1px solid rgba(0,0,0,0.03);">暂无记录</div>
             
             <!-- Timeline Feed Item -->
@@ -54,6 +54,7 @@ const dayjs = window.dayjs;
     flex-direction: column;
     position: relative;
     padding-left: 6rem;
+    min-height: 0;
 }
 
 .memos-bg-grid {

@@ -82,6 +82,7 @@ CREATE TABLE IF NOT EXISTS expenses (
     reimbursement_status TEXT CHECK(reimbursement_status IN ('not_required', 'paid_in_full', 'partial', 'pending')) DEFAULT 'not_required',
     reimbursed_amount DECIMAL(12,2) DEFAULT 0,
     status TEXT CHECK(status IN ('planned', 'paid', 'refunded')) DEFAULT 'planned',
+    decoration_area TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     tags TEXT,

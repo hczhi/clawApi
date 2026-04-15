@@ -175,8 +175,8 @@ onMounted(() => {
     flex-direction: column;
     width: 100vw;
     height: 100vh;
-    min-width: 1200px;
-    min-height: 1200px;
+    min-width: 1024px;
+    min-height: 700px;
     overflow: auto;
     position: relative;
     background-color: var(--color-bg-base);
@@ -200,6 +200,8 @@ onMounted(() => {
     overflow-y: auto;
     padding: 0;
     position: relative;
+    display: flex;
+    flex-direction: column;
 }
 
 /* Drawer & Overlays */
