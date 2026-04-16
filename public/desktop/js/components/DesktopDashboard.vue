@@ -9,6 +9,7 @@
                         <button class="pill-btn" @click="actions.navigate('expense-form', { mode: 'add' })">记一笔账</button>
                         <button class="pill-btn" @click="actions.navigate('memo-form', { mode: 'add' })">记录灵感</button>
                         <button class="pill-btn" @click="actions.navigate('purchase-plan-form', { mode: 'add' })">待购清单</button>
+                        <button class="pill-btn" @click="openAluminumDesigner">铝材设计</button>
                     </div>
                 </div>
 
@@ -147,6 +148,10 @@ const currentAreaTotalAmount = computed(() => {
     }, 0);
 });
 
+const openAluminumDesigner = () => {
+    window.open('/desktop/aluminum-designer.html', '_blank');
+};
+
 onMounted(() => {
     // Load initial data for dashboard if not loaded
     if (state.expenses.length === 0) {
@@ -235,8 +240,8 @@ h1, h2, h3 {
     flex-direction: column;
     gap: 1.5rem;
     position: absolute;
-    left: -2rem;
-    top: 40%;
+    left: 0;
+    top: 340px;
     transform: translateY(-50%);
     background: rgba(255, 255, 255, 0.8);
     backdrop-filter: blur(10px);

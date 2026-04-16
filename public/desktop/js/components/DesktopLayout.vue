@@ -115,7 +115,8 @@ const mainViewComponent = computed(() => {
         'expenses': 'DesktopExpenses',
         'memos': 'DesktopMemos',
         'concepts': 'DesktopConcepts',
-        'purchase-plans': 'DesktopPurchasePlans'
+        'purchase-plans': 'DesktopPurchasePlans',
+        'aluminum-designer': 'AluminumDesigner'
     };
     return map[mainView.value] || 'DesktopDashboard';
 });

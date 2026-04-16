@@ -80,6 +80,7 @@ app.component('DesktopExpenses', loadDesktopComponent('DesktopExpenses'));
 app.component('DesktopConcepts', loadDesktopComponent('DesktopConcepts'));
 app.component('DesktopPurchasePlans', loadDesktopComponent('DesktopPurchasePlans'));
 app.component('DesktopMemos', loadDesktopComponent('DesktopMemos'));
+app.component('AluminumDesigner', loadDesktopComponent('AluminumDesigner'));
 
 // 全局注册 Desktop 详情组件
 app.component('DesktopExpenseDetail', loadDesktopComponent('DesktopExpenseDetail'));

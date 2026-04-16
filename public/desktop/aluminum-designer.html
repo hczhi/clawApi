@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>铝型材家具设计器 - 🦁 ClawApi</title>
+    <link rel="shortcut icon" href="//ai-1303208826.cos.ap-guangzhou.myqcloud.com/WorkbenchApp/sklogo3_n.png">
+    <meta name="theme-color" content="#111111">
+    
+    <!-- 引入全局样式 -->
+    <link rel="stylesheet" href="/desktop/css/style.css">
+    
+    <!-- 核心库依赖 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- SFC Loader 和 SCSS 编译 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sass.js/0.11.1/sass.sync.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue3-sfc-loader/dist/vue3-sfc-loader.js"></script>
+
+    <!-- Three.js (3D 预览) -->
+    <script src="https://unpkg.com/three@0.147.0/build/three.min.js"></script>
+    <script src="https://unpkg.com/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://unpkg.com/three@0.147.0/examples/js/controls/TransformControls.js"></script>
+
+    <!-- 注意：本项目禁止使用 TailwindCSS，样式由内联 SCSS 处理 -->
+    <style>
+        html, body { 
+            background-color: #FAFAFA; 
+            color: #111111; 
+            margin: 0; 
+            padding: 0; 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+            overflow: auto !important; /* 强制覆盖大屏的隐藏滚动条 */
+            height: auto !important;
+        }
+        [v-cloak] { display: none; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body>
+    <div id="app" v-cloak>
+        <aluminum-designer></aluminum-designer>
+    </div>
+
+    <script type="module">
+        const { loadModule } = window['vue3-sfc-loader'];
+        
+        const options = {
+            moduleCache: {
+                vue: Vue
+            },
+            async getFile(url) {
+                const res = await fetch(url);
+                if (!res.ok) throw Object.assign(new Error(res.statusText + ' ' + url), { res });
+                return {
+                    getContentData: asBinary => asBinary ? res.arrayBuffer() : res.text(),
+                    type: url.endsWith('.vue') ? '.vue' : (url.endsWith('.scss') ? '.scss' : '.mjs')
+                }
+            },
+            addStyle(textContent) {
+                const style = Object.assign(document.createElement('style'), { textContent });
+                const ref = document.head.getElementsByTagName('style')[0] || null;
+                document.head.insertBefore(style, ref);
+            },
+            async processStyles(src, lang, filename, options) {
+                if (lang === 'scss') {
+                    try {
+                        const cleanSrc = src.replace(/@import\s+['"]\/app\/scss\/_variables\.scss['"];/g, '');
+                        // 若需使用变量，可在此处追加
+                        return new Promise((resolve, reject) => {
+                            Sass.compile(cleanSrc, result => {
+                                if (result.status === 0) resolve(result.text);
+                                else reject(new Error(result.message));
+                            });
+                        });
+                    } catch (e) {
+                        console.error("SCSS Compile error:", e);
+                        return src;
+                    }
+                }
+                return src;
+            }
+        };
+
+        const { createApp } = Vue;
+        const app = createApp({
+            components: {
+                'aluminum-designer': Vue.defineAsyncComponent(() => loadModule('/desktop/js/components/AluminumDesigner.vue', options))
+            }
+        });
+
+        app.mount('#app');
+    </script>
+</body>
+</html>
